@@ -252,8 +252,8 @@ func _update_intents(player: CombatantState) -> void:
 		var preview := simulation.get_damage_preview(skill.content_id, enemy.instance_id, player.instance_id, player.is_defending)
 		if preview != Vector2i.ZERO:
 			detail += " // %d-%d DAMAGE" % [preview.x, preview.y]
-		lines.append("%s -> %s" % [enemy.display_name.to_upper(), detail])
-	intent_label.text = "ENEMY INTENTS // " + "    |    ".join(lines)
+		lines.append("%s: %s" % [_short_name(enemy), detail])
+	intent_label.text = "INTENTS // " + "  |  ".join(lines)
 
 
 func _update_timeline() -> void:
@@ -286,6 +286,10 @@ func _status_text(combatant: CombatantState) -> String:
 
 func _resource_name(resource_id: StringName) -> String:
 	return "PATCH" if resource_id == &"field_patch_charges" else String(resource_id).to_upper()
+
+
+func _short_name(combatant: CombatantState) -> String:
+	return combatant.display_name.get_slice(" ", combatant.display_name.get_slice_count(" ") - 1).to_upper()
 
 
 func _contains_event(events: Array[CombatEvent], event_type: CombatEvent.EventType) -> bool:

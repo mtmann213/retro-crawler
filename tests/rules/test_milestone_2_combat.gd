@@ -85,6 +85,43 @@ func test_multiple_effects_resolve_in_authored_order() -> void:
 	assert_gt(status_index, damage_index)
 
 
+func test_resource_effects_can_gain_and_spend() -> void:
+	var combatant := CombatantState.new(
+		1, &"test", "Test", CombatantState.Team.PLAYER, 10, 1, 1, 1,
+	)
+	combatant.set_resource(&"stamina", 5, 10)
+	var spend := EffectDefinition.new()
+	spend.effect_type = EffectDefinition.EffectType.MODIFY_RESOURCE
+	spend.resource_id = &"stamina"
+	spend.base_amount = -3
+	assert_true(spend.validate().is_empty())
+	var skill := SkillDefinition.new()
+	skill.content_id = &"resource_test"
+	skill.display_name = "Resource Test"
+	skill.action_kind = SkillDefinition.ActionKind.UTILITY
+	skill.target_rule = SkillDefinition.TargetRule.SELF
+	skill.effects = [spend]
+	var events := EffectResolver.resolve_effects(
+		combatant,
+		combatant,
+		skill,
+		{},
+		RandomNumberGenerator.new(),
+	)
+	assert_eq(combatant.get_resource(&"stamina"), 2)
+	assert_true(_contains_event(events, CombatEvent.EventType.RESOURCE_SPENT))
+
+
+func test_unimplemented_effect_types_fail_validation() -> void:
+	for effect_type: EffectDefinition.EffectType in [
+		EffectDefinition.EffectType.GRANT_SHIELD,
+		EffectDefinition.EffectType.MODIFY_TIMELINE,
+	]:
+		var effect := EffectDefinition.new()
+		effect.effect_type = effect_type
+		assert_false(effect.validate().is_empty())
+
+
 func _advance_to_player(simulation: CombatSimulation) -> void:
 	var safety := 20
 	while not simulation.combat_finished_flag and safety > 0:

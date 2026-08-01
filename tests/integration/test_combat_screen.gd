@@ -60,6 +60,14 @@ func test_target_selection_routes_attacks_to_the_drone() -> void:
 	assert_lt(screen.simulation.get_combatant(3).current_hp, drone_hp)
 
 
+func test_screen_fits_the_internal_viewport() -> void:
+	var screen := await _spawn_screen()
+	var minimum_size := screen.get_combined_minimum_size()
+	assert_lte(minimum_size.x, 640.0)
+	assert_lte(minimum_size.y, 360.0)
+	assert_true((screen.get_node("%RestartButton") as Button).get_global_rect().end.y <= 360.0)
+
+
 func test_invalid_enemy_action_halts_in_a_restartable_state() -> void:
 	var screen := await _spawn_screen()
 	var enemy := screen.simulation.get_combatant(2)

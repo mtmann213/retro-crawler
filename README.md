@@ -21,7 +21,7 @@ godot --headless --path . --editor --quit
 godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 ```
 
-The suite covers damage math, owner-turn cooldowns, phase-based statuses, stable timeline ties, AI validity, telegraph fidelity, ordered multi-effects, target selection, combat completion, and 100 deterministic encounter simulations.
+The suite covers damage math, owner-turn cooldowns, phase-based statuses, stable timeline ties, AI validity, telegraph fidelity, ordered multi-effects, target selection, viewport fit, combat completion, and 50 deterministic seeds across all three encounter configurations.
 
 ## Milestone 2 boundaries
 

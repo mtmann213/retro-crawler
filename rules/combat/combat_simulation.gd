@@ -210,7 +210,7 @@ func get_damage_preview(
 	var skill := get_skill(skill_id)
 	var actor := get_combatant(actor_id)
 	var target := get_combatant(target_id)
-	if skill == null or actor == null or target == null:
+	if skill == null or actor == null or target == null or not skill.validate().is_empty():
 		return Vector2i.ZERO
 
 	var damage_effect: EffectDefinition = null

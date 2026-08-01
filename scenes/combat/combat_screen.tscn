@@ -103,14 +103,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 14
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 14
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 4
 
 [node name="Header" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -118,7 +118,7 @@ layout_mode = 2
 [node name="Title" type="Label" parent="Margin/Layout/Header"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "RETRO CRAWLER // COMBAT LAB"
 
 [node name="HeaderSpacer" type="Control" parent="Margin/Layout/Header"]
@@ -140,15 +140,16 @@ theme_override_styles/panel = SubResource("StyleIntent")
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.996, 0.718, 0.718, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 9
 text = "ENEMY INTENT // BITE"
+text_overrun_behavior = 3
 
 [node name="Combatants" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 4
 
 [node name="PlayerCard" type="PanelContainer" parent="Margin/Layout/Combatants"]
-custom_minimum_size = Vector2(0, 86)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleCard")
@@ -221,7 +222,7 @@ theme_override_font_sizes/font_size = 8
 text = "STATUS // CLEAR"
 
 [node name="EnemyCard" type="PanelContainer" parent="Margin/Layout/Combatants"]
-custom_minimum_size = Vector2(0, 86)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleCard")
@@ -267,6 +268,7 @@ theme_override_styles/fill = SubResource("StyleHPFill")
 show_percentage = false
 
 [node name="EnemyReadout" type="Label" parent="Margin/Layout/Combatants/EnemyCard/EnemyLayout"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
@@ -280,7 +282,7 @@ theme_override_font_sizes/font_size = 8
 text = "STATUS // CLEAR"
 
 [node name="EnemyTwoCard" type="PanelContainer" parent="Margin/Layout/Combatants"]
-custom_minimum_size = Vector2(0, 86)
+custom_minimum_size = Vector2(0, 76)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleCard")
@@ -326,6 +328,7 @@ theme_override_styles/fill = SubResource("StyleHPFill")
 show_percentage = false
 
 [node name="EnemyTwoReadout" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
@@ -341,7 +344,7 @@ text = "STATUS // CLEAR"
 [node name="Lower" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 7
+theme_override_constants/separation = 4
 
 [node name="CommandCard" type="PanelContainer" parent="Margin/Layout/Lower"]
 custom_minimum_size = Vector2(238, 0)
@@ -350,7 +353,7 @@ theme_override_styles/panel = SubResource("StyleCard")
 
 [node name="CommandLayout" type="VBoxContainer" parent="Margin/Layout/Lower/CommandCard"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 3
 
 [node name="StatusLabel" type="Label" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
 unique_name_in_owner = true
@@ -372,7 +375,7 @@ theme_override_constants/separation = 4
 
 [node name="TargetOneButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/TargetRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 22)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 8
@@ -380,7 +383,7 @@ text = "> SCRAP HOUND"
 
 [node name="TargetTwoButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/TargetRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 22)
+custom_minimum_size = Vector2(0, 18)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 8
@@ -389,12 +392,12 @@ text = "SENTRY DRONE"
 [node name="SkillGrid" type="GridContainer" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
 layout_mode = 2
 theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
+theme_override_constants/v_separation = 2
 columns = 2
 
 [node name="StrikeButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_focus_color = Color(0.878, 0.957, 1, 1)
@@ -407,7 +410,7 @@ text = "QUICK STRIKE"
 
 [node name="HeavyButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
@@ -419,7 +422,7 @@ text = "HEAVY SWING"
 
 [node name="BraceButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_focus_color = Color(0.878, 0.957, 1, 1)
@@ -432,7 +435,7 @@ text = "BRACE   HALF DAMAGE"
 
 [node name="HamstringButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
@@ -444,7 +447,7 @@ text = "HAMSTRING"
 
 [node name="PatchButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 10
@@ -456,7 +459,7 @@ text = "FIELD PATCH"
 
 [node name="RestartButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 30)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
 theme_override_font_sizes/font_size = 11

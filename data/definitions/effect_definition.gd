@@ -25,7 +25,7 @@ enum EffectType {
 func validate() -> PackedStringArray:
 	var errors := PackedStringArray()
 
-	if base_amount < 0:
+	if base_amount < 0 and effect_type != EffectType.MODIFY_RESOURCE:
 		errors.append("base_amount cannot be negative.")
 	if scaling_ratio < 0.0:
 		errors.append("scaling_ratio cannot be negative.")
@@ -39,5 +39,9 @@ func validate() -> PackedStringArray:
 		errors.append("Removing a status requires referenced_content_id.")
 	if effect_type == EffectType.MODIFY_RESOURCE and resource_id.is_empty():
 		errors.append("Resource effects require resource_id.")
+	if effect_type == EffectType.GRANT_SHIELD:
+		errors.append("GRANT_SHIELD is not implemented yet.")
+	if effect_type == EffectType.MODIFY_TIMELINE:
+		errors.append("MODIFY_TIMELINE is not implemented yet.")
 
 	return errors
