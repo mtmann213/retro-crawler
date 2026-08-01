@@ -30,6 +30,7 @@ var actions_taken: int = 0
 var ai_pattern_index: int = 0
 var intent_skill_id: StringName = &""
 var intent_target_id: int = -1
+var applied_equipment: Dictionary[int, StringName] = {}
 
 
 func _init(

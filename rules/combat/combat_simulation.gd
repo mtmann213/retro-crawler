@@ -66,6 +66,10 @@ func get_status_definition(status_id: StringName) -> StatusDefinition:
 	return _status_definitions.get(status_id) as StatusDefinition
 
 
+func get_enemy_definition(definition_id: StringName) -> EnemyDefinition:
+	return _enemy_definitions.get(definition_id) as EnemyDefinition
+
+
 func get_next_actor() -> CombatantState:
 	return TimelineResolver.get_next_actor(combatants)
 

@@ -1,0 +1,128 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/menus/inventory_screen.gd" id="1_inventory"]
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.035, 0.043, 0.055, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.282, 0.376, 0.455, 1)
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[node name="InventoryScreen" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_inventory")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = 14.0
+offset_right = -18.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Panel")
+
+[node name="Layout" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Title" type="Label" parent="Panel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
+theme_override_font_sizes/font_size = 16
+text = "COMBAT REWARDS // INVENTORY"
+
+[node name="RewardLabel" type="Label" parent="Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+theme_override_font_sizes/font_size = 9
+text = "RECOVERED //"
+text_overrun_behavior = 3
+
+[node name="ProgressionLabel" type="Label" parent="Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "LEVEL 1 // XP 0"
+
+[node name="Body" type="HBoxContainer" parent="Panel/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="ItemScroll" type="ScrollContainer" parent="Panel/Layout/Body"]
+custom_minimum_size = Vector2(188, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemList" type="VBoxContainer" parent="Panel/Layout/Body/ItemScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 3
+
+[node name="Details" type="VBoxContainer" parent="Panel/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 5
+
+[node name="DetailsLabel" type="RichTextLabel" parent="Panel/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 10
+bbcode_enabled = true
+text = "Select recovered loot to inspect it."
+
+[node name="StatsLabel" type="Label" parent="Panel/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.733, 0.871, 0.984, 1)
+theme_override_font_sizes/font_size = 9
+text = "HP 100/100 // POW 12 // DEF 8 // SPD 10"
+
+[node name="EquipmentLabel" type="Label" parent="Panel/Layout/Body/Details"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "WEAPON: NONE\nARMOR: NONE"
+
+[node name="Actions" type="HBoxContainer" parent="Panel/Layout/Body/Details"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="UseItemButton" type="Button" parent="Panel/Layout/Body/Details/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 24)
+layout_mode = 2
+text = "USE"
+
+[node name="EquipItemButton" type="Button" parent="Panel/Layout/Body/Details/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 24)
+layout_mode = 2
+text = "EQUIP"
+
+[node name="ContinueButton" type="Button" parent="Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+text = "CONTINUE TO NEXT ENCOUNTER"

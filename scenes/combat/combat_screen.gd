@@ -34,11 +34,16 @@ const SECOND_ENEMY_ID := 3
 @onready var target_one_button: Button = %TargetOneButton
 @onready var target_two_button: Button = %TargetTwoButton
 @onready var restart_button: Button = %RestartButton
+@onready var rewards_button: Button = %RewardsButton
 @onready var combat_log: CombatLog = %CombatLog
+@onready var inventory_screen: InventoryScreen = %InventoryScreen
 
 var simulation: CombatSimulation
+var reward_session := RewardSession.new()
 var encounter_faulted: bool = false
 var selected_target_id: int = FIRST_ENEMY_ID
+var rewards_granted: bool = false
+var completed_encounters: int = 0
 
 
 func _ready() -> void:
@@ -50,6 +55,8 @@ func _ready() -> void:
 	target_one_button.pressed.connect(_select_target.bind(FIRST_ENEMY_ID))
 	target_two_button.pressed.connect(_select_target.bind(SECOND_ENEMY_ID))
 	restart_button.pressed.connect(_start_encounter)
+	rewards_button.pressed.connect(_show_rewards)
+	inventory_screen.continue_requested.connect(_start_encounter)
 	_start_encounter()
 
 
@@ -66,19 +73,54 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start_encounter() -> void:
+	inventory_screen.visible = false
 	simulation = PrototypeEncounter.create_simulation(
 		PrototypeEncounter.DEFAULT_SEED,
 		PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID,
 	)
 	selected_target_id = FIRST_ENEMY_ID
 	encounter_faulted = false
+	rewards_granted = false
+	EquipmentRules.apply_equipped_items(
+		reward_session.inventory,
+		simulation.get_combatant(PLAYER_ID),
+		reward_session.item_catalog,
+	)
 	combat_log.clear_entries()
 	combat_log.append_entry("SYSTEM // two-hostile deterministic encounter loaded", Color("7dd3fc"))
 	combat_log.append_entry("Choose a target, read both telegraphs, then commit an action.")
 	restart_button.visible = false
+	rewards_button.visible = false
 	_present_events(simulation.prepare_next_turn())
 	_refresh_view()
 	strike_button.grab_focus()
+
+
+func _show_rewards() -> void:
+	if (
+		simulation == null
+		or not simulation.combat_finished_flag
+		or simulation.winning_team != CombatantState.Team.PLAYER
+		or rewards_granted
+	):
+		return
+	var loot_table_id: StringName = &""
+	var experience_amount := 0
+	for combatant: CombatantState in simulation.combatants:
+		if combatant.team != CombatantState.Team.ENEMY:
+			continue
+		var definition := simulation.get_enemy_definition(combatant.definition_id)
+		if definition == null:
+			continue
+		if loot_table_id.is_empty():
+			loot_table_id = definition.loot_table_id
+		experience_amount += definition.experience_reward
+	var seed_value := PrototypeEncounter.DEFAULT_SEED + completed_encounters
+	var drops := reward_session.grant_rewards(loot_table_id, experience_amount, seed_value)
+	rewards_granted = true
+	completed_encounters += 1
+	rewards_button.visible = false
+	inventory_screen.present(reward_session, simulation.get_combatant(PLAYER_ID), drops)
 
 
 func _select_target(target_id: int) -> void:
@@ -205,7 +247,14 @@ func _refresh_view() -> void:
 	_update_skill_button(hamstring_button, &"hamstring", player_can_act)
 	_update_skill_button(patch_button, &"field_patch", player_can_act)
 	restart_button.visible = simulation.combat_finished_flag or encounter_faulted
-	if restart_button.visible:
+	var player_won := (
+		simulation.combat_finished_flag
+		and simulation.winning_team == CombatantState.Team.PLAYER
+	)
+	rewards_button.visible = player_won and not rewards_granted
+	if rewards_button.visible:
+		rewards_button.grab_focus()
+	elif restart_button.visible:
 		restart_button.grab_focus()
 
 

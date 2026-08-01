@@ -1,7 +1,8 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scenes/combat/combat_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://ui/components/combat_log.tscn" id="2_log"]
+[ext_resource type="PackedScene" path="res://scenes/menus/inventory_screen.tscn" id="3_inventory"]
 
 [sub_resource type="StyleBoxFlat" id="StyleCard"]
 bg_color = Color(0.071, 0.084, 0.106, 1)
@@ -469,6 +470,19 @@ theme_override_styles/pressed = SubResource("StyleButtonHover")
 theme_override_styles/focus = SubResource("StyleButtonHover")
 text = "RESTART ENCOUNTER"
 
+[node name="RewardsButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleButtonNormal")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonHover")
+theme_override_styles/focus = SubResource("StyleButtonHover")
+text = "CLAIM REWARDS"
+
 [node name="CombatLog" parent="Margin/Layout/Lower" instance=ExtResource("2_log")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -481,3 +495,6 @@ theme_override_colors/font_color = Color(0.42, 0.47, 0.54, 1)
 theme_override_font_sizes/font_size = 9
 text = "WASD / D-PAD: SELECT     ENTER / A: CONFIRM     DECISIONS PAUSE THE TIMELINE"
 horizontal_alignment = 1
+
+[node name="InventoryScreen" parent="." instance=ExtResource("3_inventory")]
+unique_name_in_owner = true

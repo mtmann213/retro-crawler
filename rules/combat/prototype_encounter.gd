@@ -158,6 +158,8 @@ static func _create_enemy_definitions() -> Array[EnemyDefinition]:
 	hound.speed = 13
 	hound.skill_ids = [&"scrap_bite", &"scrap_circle"]
 	hound.ai_pattern = [&"scrap_bite", &"scrap_circle"]
+	hound.loot_table_id = &"loot_combat_victory"
+	hound.experience_reward = 40
 
 	var drone := EnemyDefinition.new()
 	drone.content_id = &"enemy_sentry_drone"
@@ -168,6 +170,8 @@ static func _create_enemy_definitions() -> Array[EnemyDefinition]:
 	drone.speed = 10
 	drone.skill_ids = [&"drone_charged_shot", &"drone_reposition"]
 	drone.ai_pattern = [&"drone_charged_shot", &"drone_reposition"]
+	drone.loot_table_id = &"loot_combat_victory"
+	drone.experience_reward = 45
 
 	var brute := EnemyDefinition.new()
 	brute.content_id = &"enemy_scrap_brute"
@@ -178,6 +182,8 @@ static func _create_enemy_definitions() -> Array[EnemyDefinition]:
 	brute.speed = 7
 	brute.skill_ids = [&"brute_crush", &"brute_slam"]
 	brute.ai_pattern = [&"brute_crush", &"brute_slam"]
+	brute.loot_table_id = &"loot_combat_victory"
+	brute.experience_reward = 90
 
 	var definitions: Array[EnemyDefinition] = [hound, drone, brute]
 	return definitions
