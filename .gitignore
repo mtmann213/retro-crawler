@@ -1,0 +1,17 @@
+# Godot-generated files
+.godot/
+
+# Local test output
+reports/
+test-results/
+
+# Exported builds
+builds/
+exports/
+
+# Editor and operating-system noise
+.vscode/
+.idea/
+*.tmp
+Thumbs.db
+.DS_Store
