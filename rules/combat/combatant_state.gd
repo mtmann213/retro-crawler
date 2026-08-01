@@ -20,11 +20,16 @@ var speed: int
 var resources: Dictionary[StringName, int] = {}
 var max_resources: Dictionary[StringName, int] = {}
 var cooldowns: Dictionary[StringName, int] = {}
+var statuses: Array[StatusState] = []
 var skill_ids: Array[StringName] = []
 var next_action_tick: int = 0
 var spawn_order: int = 0
 var is_defending: bool = false
 var is_defeated: bool = false
+var actions_taken: int = 0
+var ai_pattern_index: int = 0
+var intent_skill_id: StringName = &""
+var intent_target_id: int = -1
 
 
 func _init(
@@ -123,6 +128,9 @@ func gain_resource(resource_id: StringName, amount: int) -> int:
 
 func begin_turn() -> void:
 	is_defending = false
+
+
+func advance_cooldowns() -> void:
 
 	for skill_id: StringName in cooldowns.keys():
 		cooldowns[skill_id] = maxi(cooldowns[skill_id] - 1, 0)

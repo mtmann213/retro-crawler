@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[node name="TimelineEntry" type="Label"]
+custom_minimum_size = Vector2(88, 20)
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "ACTOR 000"
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -213,6 +213,13 @@ theme_override_styles/background = SubResource("StyleHPBackground")
 theme_override_styles/fill = SubResource("StyleStaminaFill")
 show_percentage = false
 
+[node name="PlayerStatuses" type="Label" parent="Margin/Layout/Combatants/PlayerCard/PlayerLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.63, 0.95, 1)
+theme_override_font_sizes/font_size = 8
+text = "STATUS // CLEAR"
+
 [node name="EnemyCard" type="PanelContainer" parent="Margin/Layout/Combatants"]
 custom_minimum_size = Vector2(0, 86)
 layout_mode = 2
@@ -265,6 +272,72 @@ theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
 theme_override_font_sizes/font_size = 9
 text = "FAST // MECHANICAL // HOSTILE"
 
+[node name="EnemyStatuses" type="Label" parent="Margin/Layout/Combatants/EnemyCard/EnemyLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.63, 0.95, 1)
+theme_override_font_sizes/font_size = 8
+text = "STATUS // CLEAR"
+
+[node name="EnemyTwoCard" type="PanelContainer" parent="Margin/Layout/Combatants"]
+custom_minimum_size = Vector2(0, 86)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleCard")
+
+[node name="EnemyTwoLayout" type="VBoxContainer" parent="Margin/Layout/Combatants/EnemyTwoCard"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EnemyTwoHeader" type="HBoxContainer" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+layout_mode = 2
+
+[node name="EnemyTwoName" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout/EnemyTwoHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.996, 0.718, 0.718, 1)
+theme_override_font_sizes/font_size = 12
+text = "SENTRY DRONE"
+
+[node name="EnemyTwoSpacer" type="Control" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout/EnemyTwoHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemyTwoGuard" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout/EnemyTwoHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.576, 0.773, 0.992, 1)
+theme_override_font_sizes/font_size = 10
+text = "[BRACED]"
+
+[node name="EnemyTwoHPLabel" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "HP"
+
+[node name="EnemyTwoHPBar" type="ProgressBar" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 1
+theme_override_styles/background = SubResource("StyleHPBackground")
+theme_override_styles/fill = SubResource("StyleHPFill")
+show_percentage = false
+
+[node name="EnemyTwoReadout" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+theme_override_font_sizes/font_size = 9
+text = "RANGED // MECHANICAL // HOSTILE"
+
+[node name="EnemyTwoStatuses" type="Label" parent="Margin/Layout/Combatants/EnemyTwoCard/EnemyTwoLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.69, 0.63, 0.95, 1)
+theme_override_font_sizes/font_size = 8
+text = "STATUS // CLEAR"
+
 [node name="Lower" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -286,11 +359,44 @@ theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
 theme_override_font_sizes/font_size = 10
 text = "YOUR TURN // CHOOSE AN ACTION"
 
-[node name="StrikeButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+[node name="TargetLabel" type="Label" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.996, 0.718, 0.718, 1)
+theme_override_font_sizes/font_size = 9
+text = "TARGET // SCRAP HOUND"
+
+[node name="TargetRow" type="HBoxContainer" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TargetOneButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/TargetRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "> SCRAP HOUND"
+
+[node name="TargetTwoButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/TargetRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 8
+text = "SENTRY DRONE"
+
+[node name="SkillGrid" type="GridContainer" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
+
+[node name="StrikeButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-focus_neighbor_bottom = NodePath("../BraceButton")
+size_flags_horizontal = 3
 theme_override_colors/font_focus_color = Color(0.878, 0.957, 1, 1)
 theme_override_font_sizes/font_size = 11
 theme_override_styles/normal = SubResource("StyleButtonNormal")
@@ -299,11 +405,23 @@ theme_override_styles/pressed = SubResource("StyleButtonHover")
 theme_override_styles/focus = SubResource("StyleButtonHover")
 text = "QUICK STRIKE"
 
-[node name="BraceButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
+[node name="HeavyButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-focus_neighbor_top = NodePath("../StrikeButton")
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleButtonNormal")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonHover")
+theme_override_styles/focus = SubResource("StyleButtonHover")
+text = "HEAVY SWING"
+
+[node name="BraceButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_focus_color = Color(0.878, 0.957, 1, 1)
 theme_override_font_sizes/font_size = 11
 theme_override_styles/normal = SubResource("StyleButtonNormal")
@@ -311,6 +429,30 @@ theme_override_styles/hover = SubResource("StyleButtonHover")
 theme_override_styles/pressed = SubResource("StyleButtonHover")
 theme_override_styles/focus = SubResource("StyleButtonHover")
 text = "BRACE   HALF DAMAGE"
+
+[node name="HamstringButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleButtonNormal")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonHover")
+theme_override_styles/focus = SubResource("StyleButtonHover")
+text = "HAMSTRING"
+
+[node name="PatchButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout/SkillGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleButtonNormal")
+theme_override_styles/hover = SubResource("StyleButtonHover")
+theme_override_styles/pressed = SubResource("StyleButtonHover")
+theme_override_styles/focus = SubResource("StyleButtonHover")
+text = "FIELD PATCH"
 
 [node name="RestartButton" type="Button" parent="Margin/Layout/Lower/CommandCard/CommandLayout"]
 unique_name_in_owner = true

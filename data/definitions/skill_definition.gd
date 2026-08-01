@@ -4,15 +4,26 @@ extends Resource
 enum ActionKind {
 	STRIKE,
 	BRACE,
+	UTILITY,
+}
+
+enum TargetRule {
+	SELF,
+	SINGLE_ENEMY,
 }
 
 @export var content_id: StringName = &""
 @export var display_name: String = ""
 @export_multiline var description: String = ""
 @export var action_kind: ActionKind = ActionKind.STRIKE
+@export var target_rule: TargetRule = TargetRule.SINGLE_ENEMY
 @export_range(0, 999, 1) var stamina_cost: int = 0
 @export_range(0, 999, 1) var stamina_gain: int = 0
+@export var charge_resource_id: StringName = &""
+@export_range(0, 99, 1) var charge_cost: int = 0
+@export_range(0, 99, 1) var cooldown_turns: int = 0
 @export_range(1, 999, 1) var base_recovery: int = 100
+@export_range(0, 999, 1) var dungeon_time_cost: int = 5
 @export_range(0.0, 1.0, 0.01) var critical_chance: float = 0.0
 @export_range(1.0, 5.0, 0.05) var critical_multiplier: float = 1.5
 @export var effects: Array[EffectDefinition] = []
@@ -27,6 +38,10 @@ func validate() -> PackedStringArray:
 		errors.append("display_name is required.")
 	if base_recovery <= 0:
 		errors.append("base_recovery must be positive.")
+	if charge_cost > 0 and charge_resource_id.is_empty():
+		errors.append("Charged skills require charge_resource_id.")
+	if action_kind == ActionKind.BRACE and target_rule != TargetRule.SELF:
+		errors.append("Brace skills must target self.")
 	if action_kind == ActionKind.STRIKE and effects.is_empty():
 		errors.append("Strike skills require at least one effect.")
 	elif (

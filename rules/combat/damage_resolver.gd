@@ -46,6 +46,7 @@ static func resolve(
 	defended: bool = false,
 	critical_chance: float = 0.0,
 	critical_multiplier: float = 1.5,
+	status_modifier: float = 1.0,
 ) -> Dictionary:
 	assert(rng != null)
 
@@ -59,6 +60,8 @@ static func resolve(
 		critical,
 		critical_multiplier,
 		variance,
+		1.0,
+		status_modifier,
 	)
 
 	return {
