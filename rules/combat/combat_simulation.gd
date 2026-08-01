@@ -94,6 +94,8 @@ func resolve_action(command: ActionCommand) -> Array[CombatEvent]:
 	var skill := get_skill(command.skill_id)
 	if skill == null or not actor.knows_skill(command.skill_id):
 		return _rejected(&"unknown_skill")
+	if not skill.validate().is_empty():
+		return _rejected(&"invalid_skill")
 	if not actor.can_spend_resource(&"stamina", skill.stamina_cost):
 		return _rejected(&"insufficient_stamina")
 
@@ -165,6 +167,8 @@ func get_damage_preview(
 		return Vector2i.ZERO
 
 	var effect := skill.effects[0]
+	if effect == null or effect.effect_type != EffectDefinition.EffectType.DAMAGE:
+		return Vector2i.ZERO
 	return DamageResolver.preview_range(
 		effect,
 		actor.power,

@@ -47,6 +47,33 @@ func test_restart_button_replaces_finished_state() -> void:
 	assert_false((screen.get_node("%RestartButton") as Button).visible)
 
 
+func test_invalid_enemy_action_halts_in_a_restartable_state() -> void:
+	var screen := await _spawn_screen()
+	var enemy := screen.simulation.get_combatant(2)
+	enemy.skill_ids[0] = &"missing_enemy_skill"
+
+	(screen.get_node("%StrikeButton") as Button).pressed.emit()
+
+	assert_true(screen.encounter_faulted)
+	assert_true((screen.get_node("%RestartButton") as Button).visible)
+	assert_true((screen.get_node("%StrikeButton") as Button).disabled)
+	assert_string_contains(
+		(screen.get_node("%CombatLog") as CombatLog).entries.get_parsed_text(),
+		"ENCOUNTER HALTED",
+	)
+
+
+func test_defeated_player_does_not_display_guard_status() -> void:
+	var screen := await _spawn_screen()
+	var player := screen.simulation.get_combatant(1)
+	player.current_hp = 1
+
+	(screen.get_node("%BraceButton") as Button).pressed.emit()
+
+	assert_true(player.is_defeated)
+	assert_false((screen.get_node("%PlayerGuard") as Label).visible)
+
+
 func _spawn_screen() -> CombatScreen:
 	var screen := COMBAT_SCREEN_SCENE.instantiate() as CombatScreen
 	add_child_autofree(screen)

@@ -29,6 +29,12 @@ func validate() -> PackedStringArray:
 		errors.append("base_recovery must be positive.")
 	if action_kind == ActionKind.STRIKE and effects.is_empty():
 		errors.append("Strike skills require at least one effect.")
+	elif (
+		action_kind == ActionKind.STRIKE
+		and effects[0] != null
+		and effects[0].effect_type != EffectDefinition.EffectType.DAMAGE
+	):
+		errors.append("Strike skills require a damage effect first.")
 
 	for effect: EffectDefinition in effects:
 		if effect == null:

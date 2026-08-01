@@ -23,6 +23,7 @@ const ENEMY_ID := 2
 @onready var combat_log: CombatLog = %CombatLog
 
 var simulation: CombatSimulation
+var encounter_faulted: bool = false
 
 
 func _ready() -> void:
@@ -46,6 +47,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_encounter() -> void:
 	simulation = PrototypeEncounter.create_simulation()
+	encounter_faulted = false
 	combat_log.clear_entries()
 	combat_log.append_entry("SYSTEM // deterministic encounter seed loaded", Color("7dd3fc"))
 	combat_log.append_entry("The Scrap Hound lowers its chassis and prepares to bite.")
@@ -74,7 +76,7 @@ func _submit_player_action(skill_id: StringName, target_id: int) -> void:
 	var command := ActionCommand.new(active_actor.instance_id, skill_id, target_id)
 	_present_events(simulation.resolve_action(command))
 
-	while not simulation.combat_finished_flag:
+	while not simulation.combat_finished_flag and not encounter_faulted:
 		active_actor = simulation.get_next_actor()
 		if active_actor == null or active_actor.team == CombatantState.Team.PLAYER:
 			break
@@ -82,7 +84,14 @@ func _submit_player_action(skill_id: StringName, target_id: int) -> void:
 		var enemy_command := simulation.create_enemy_command()
 		if enemy_command == null:
 			break
-		_present_events(simulation.resolve_action(enemy_command))
+		var enemy_events := simulation.resolve_action(enemy_command)
+		_present_events(enemy_events)
+		if _contains_event(enemy_events, CombatEvent.EventType.ACTION_REJECTED):
+			encounter_faulted = true
+			combat_log.append_entry(
+				"ENCOUNTER HALTED // restart required",
+				Color("fb7185"),
+			)
 
 	_present_events(simulation.prepare_next_turn())
 	_refresh_view()
@@ -134,16 +143,19 @@ func _refresh_view() -> void:
 	]
 	player_stamina_bar.max_value = player.get_max_resource(&"stamina")
 	player_stamina_bar.value = player.get_resource(&"stamina")
-	player_guard_label.visible = player.is_defending
+	player_guard_label.visible = player.is_defending and not player.is_defeated
 
 	enemy_name_label.text = enemy.display_name.to_upper()
 	enemy_hp_label.text = "HP  %d / %d" % [enemy.current_hp, enemy.max_hp]
 	enemy_hp_bar.max_value = enemy.max_hp
 	enemy_hp_bar.value = enemy.current_hp
-	enemy_guard_label.visible = enemy.is_defending
+	enemy_guard_label.visible = enemy.is_defending and not enemy.is_defeated
 
 	var active_actor := simulation.get_next_actor()
-	if simulation.combat_finished_flag:
+	if encounter_faulted:
+		status_label.text = "ENCOUNTER ERROR // RESTART REQUIRED"
+		intent_label.text = "AUTOMATION HALTED // INVALID ENEMY ACTION"
+	elif simulation.combat_finished_flag:
 		status_label.text = "ENCOUNTER COMPLETE"
 		intent_label.text = "THREAT STATUS // OFFLINE" if enemy.is_defeated else "CRAWLER STATUS // INCAPACITATED"
 	elif active_actor != null and active_actor.team == CombatantState.Team.PLAYER:
@@ -160,19 +172,20 @@ func _refresh_view() -> void:
 
 	var player_can_act := (
 		not simulation.combat_finished_flag
+		and not encounter_faulted
 		and active_actor != null
 		and active_actor.team == CombatantState.Team.PLAYER
 	)
 	strike_button.disabled = not player_can_act
 	brace_button.disabled = not player_can_act
-	restart_button.visible = simulation.combat_finished_flag
+	restart_button.visible = simulation.combat_finished_flag or encounter_faulted
 
 	var strike_preview := simulation.get_damage_preview(&"quick_strike", PLAYER_ID, ENEMY_ID)
 	strike_button.text = "QUICK STRIKE   %d–%d DMG" % [strike_preview.x, strike_preview.y]
 	strike_button.tooltip_text = "+3 stamina  //  70 recovery  //  5% critical"
 	brace_button.tooltip_text = "Halve incoming damage  //  80 recovery"
 
-	if simulation.combat_finished_flag:
+	if simulation.combat_finished_flag or encounter_faulted:
 		restart_button.grab_focus()
 	elif player_can_act and get_viewport().gui_get_focus_owner() == null:
 		strike_button.grab_focus()
@@ -189,3 +202,10 @@ func _update_enemy_intent(enemy: CombatantState, player: CombatantState) -> void
 		preview.y,
 		"  //  GUARDED" if player.is_defending else "",
 	]
+
+
+func _contains_event(events: Array[CombatEvent], event_type: CombatEvent.EventType) -> bool:
+	for event: CombatEvent in events:
+		if event.event_type == event_type:
+			return true
+	return false
