@@ -36,6 +36,7 @@ var new_run_seed: int = 0
 var new_character_profile: Dictionary = {}
 var character_profile := CharacterProfile.new()
 var tutorial_guild_state := TutorialGuildState.new()
+var companion_state := CompanionState.new()
 var tutorials_enabled := true
 
 
@@ -71,6 +72,8 @@ func _ready() -> void:
 	map_area.set_character_appearance(CharacterClassRules.color_for(character_profile.color_id))
 	if tutorials_enabled:
 		_append_log("GUILD LINK // optional field lessons available in Intake Shelter // 0 sec")
+	if new_run_seed > 0:
+		_companion_react(&"expedition_start")
 	_render_room()
 
 
@@ -135,6 +138,7 @@ func _move_to_room(room_id: StringName) -> void:
 		return
 	get_tree().call_group("audio_director", "play_move")
 	_append_log("ENTERED // %s" % FLOOR.get_room(room_id).display_name.to_upper())
+	_companion_react(room_id)
 	if before == FLOOR.starting_room_id:
 		_trigger_narrative(&"floor_started")
 	_trigger_narrative(room_id)
@@ -167,6 +171,7 @@ func _interact(interaction_id: StringName) -> void:
 					RunVariationRules.cache_patch_count(floor_state.run_variation),
 				)
 				_append_log("CACHE RECOVERED // Field Patch x%d" % added)
+				_companion_react(&"cache_recovered")
 				narrative_flags[&"took_detour"] = true
 				_trigger_narrative(&"cache_found")
 		&"engage_warden":
@@ -304,6 +309,7 @@ func _return_from_combat() -> void:
 		floor_state.victory_ending = true
 		narrative_flags[&"boss_defeated"] = true
 		_trigger_narrative(&"victory_ending")
+		_companion_react(&"warden_defeated")
 	_render_room()
 	_request_save()
 
@@ -327,6 +333,7 @@ func _extract() -> void:
 	_present_clock_events(FloorClockRules.emergency_extract(floor_state))
 	floor_state.extraction_ending = true
 	narrative_flags[&"extracted"] = true
+	_companion_react(&"emergency_extraction")
 	_trigger_narrative(&"extraction_ending")
 	_append_log("EXTRACTION // run state secured")
 	_render_room()
@@ -336,6 +343,12 @@ func _extract() -> void:
 func _append_log(message: String) -> void:
 	event_log.append_text(message + "\n")
 	event_log.scroll_to_line(event_log.get_line_count())
+
+
+func _companion_react(trigger_id: StringName) -> void:
+	var reaction := CompanionRules.reaction_once(companion_state, trigger_id)
+	if not reaction.is_empty():
+		_append_log(reaction)
 
 
 func _pulse_transition() -> void:
@@ -374,6 +387,7 @@ func create_session_snapshot() -> SessionSnapshot:
 	snapshot.world_position = map_area.player_position
 	snapshot.character_profile = character_profile.to_snapshot()
 	snapshot.tutorial_snapshot = tutorial_guild_state.to_snapshot()
+	snapshot.companion_snapshot = companion_state.to_snapshot()
 	for flag_id: StringName in narrative_flags:
 		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
 	if active_combat != null:
@@ -390,6 +404,7 @@ func restore_session(snapshot: SessionSnapshot) -> void:
 	dialogue_state = DialogueState.from_snapshot(snapshot.dialogue_snapshot)
 	character_profile = CharacterProfile.from_snapshot(snapshot.character_profile)
 	tutorial_guild_state = TutorialGuildState.from_snapshot(snapshot.tutorial_snapshot)
+	companion_state = CompanionState.from_snapshot(snapshot.companion_snapshot)
 	narrative_flags.clear()
 	for flag_id: String in snapshot.narrative_flags:
 		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])

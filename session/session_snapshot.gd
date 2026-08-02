@@ -13,6 +13,7 @@ var pending_encounter_id: StringName = &""
 var world_position := Vector2(70, 102)
 var character_profile: Dictionary = CharacterProfile.new().to_snapshot()
 var tutorial_snapshot: Dictionary = TutorialGuildState.new().to_snapshot()
+var companion_snapshot: Dictionary = CompanionState.new().to_snapshot()
 
 
 func to_dictionary() -> Dictionary:
@@ -27,6 +28,7 @@ func to_dictionary() -> Dictionary:
 		"world_position": {"x": world_position.x, "y": world_position.y},
 		"character_profile": character_profile.duplicate(true),
 		"tutorial_guild": tutorial_snapshot.duplicate(true),
+		"companion": companion_snapshot.duplicate(true),
 	}
 
 
@@ -41,6 +43,7 @@ static func from_dictionary(data: Dictionary) -> SessionSnapshot:
 	snapshot.pending_encounter_id = StringName(data.get("pending_encounter_id", ""))
 	snapshot.character_profile = (data.get("character_profile", CharacterProfile.new().to_snapshot()) as Dictionary).duplicate(true)
 	snapshot.tutorial_snapshot = (data.get("tutorial_guild", TutorialGuildState.new().to_snapshot()) as Dictionary).duplicate(true)
+	snapshot.companion_snapshot = (data.get("companion", CompanionState.new().to_snapshot()) as Dictionary).duplicate(true)
 	var world: Dictionary = data.get("world_position", {"x": 70, "y": 102})
 	snapshot.world_position = Vector2(float(world.get("x", 70)), float(world.get("y", 102)))
 	return snapshot
@@ -157,6 +160,11 @@ static func validate_dictionary(data: Dictionary) -> PackedStringArray:
 			for lesson_id in data.tutorial_guild.completed_lessons:
 				if not TutorialGuildRules.has_lesson(StringName(lesson_id)):
 					errors.append("Unknown Tutorial Guild lesson %s." % lesson_id)
+	if data.has("companion"):
+		if not data.companion is Dictionary:
+			errors.append("Companion state must be a dictionary.")
+		else:
+			errors.append_array(CompanionState.validate_snapshot(data.companion))
 	var encounter_id := String(data.get("pending_encounter_id", ""))
 	if not ["", "encounter_two_enemy", "encounter_brute", "encounter_warden"].has(encounter_id):
 		errors.append("Unknown pending encounter.")

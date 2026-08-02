@@ -385,6 +385,18 @@ func test_visual_layers_keep_world_sprites_behind_overlays() -> void:
 	assert_gt((screen.get_node("%TransitionOverlay") as ColorRect).z_index, player_layer)
 
 
+func test_companion_is_visible_and_remembers_room_reactions() -> void:
+	var screen := await _spawn_screen()
+	assert_true(screen.map_area.companion_avatar.visible)
+	screen._companion_react(&"room_broken_junction")
+	assert_true(screen.companion_state.remembers(&"reaction:room_broken_junction"))
+	assert_string_contains(screen.event_log.get_parsed_text(), "MOX //")
+	var previous_lines := screen.event_log.get_line_count()
+	screen._companion_react(&"room_broken_junction")
+	assert_eq(screen.event_log.get_line_count(), previous_lines)
+	assert_eq(screen.create_session_snapshot().companion_snapshot.bond, 1)
+
+
 func _spawn_screen() -> DungeonScreen:
 	var screen := DUNGEON_SCREEN.instantiate() as DungeonScreen
 	add_child_autofree(screen)

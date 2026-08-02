@@ -8,6 +8,7 @@ signal interaction_proximity_changed(in_range: bool, prompt: String)
 signal encounter_requested(room_id: StringName)
 
 const PLAYER_TEXTURE := preload("res://assets/characters/crawler_topdown.png")
+const COMPANION_AVATAR_SCRIPT := preload("res://scenes/dungeon/companion_avatar.gd")
 const LAYOUT: WorldLayoutDefinition = preload("res://content/worlds/service_level_layout.tres")
 const MOVE_SPEED := 82.0
 const INTERACTION_RADIUS := 24.0
@@ -24,6 +25,7 @@ var encounter_id: StringName = &""
 var run_variation: Dictionary = {}
 var movement_enabled := true
 var renderer := WorldRenderer.new()
+var companion_avatar := COMPANION_AVATAR_SCRIPT.new() as CompanionAvatar
 var player_sprite := Sprite2D.new()
 var _interaction_in_range := false
 var _encounter_triggered := false
@@ -37,6 +39,8 @@ func _ready() -> void:
 	clip_contents = true
 	renderer.z_index = 0
 	add_child(renderer)
+	companion_avatar.z_index = 4
+	add_child(companion_avatar)
 	var atlas := AtlasTexture.new()
 	atlas.atlas = PLAYER_TEXTURE
 	atlas.region = Rect2(340, 180, 580, 770)
@@ -46,6 +50,7 @@ func _ready() -> void:
 	player_sprite.position = player_position
 	player_sprite.z_index = 5
 	add_child(player_sprite)
+	companion_avatar.snap_to(player_position)
 	_refresh_renderer()
 
 
@@ -54,6 +59,7 @@ func set_character_appearance(accent_color: Color) -> void:
 
 
 func _process(delta: float) -> void:
+	companion_avatar.follow(player_position, delta)
 	if not movement_enabled or not is_visible_in_tree() or not has_focus():
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -142,6 +148,7 @@ func sync_to_room(room_id: StringName, force_warp: bool = true) -> void:
 	if force_warp or not room.bounds.has_point(player_position):
 		player_position = room.bounds.get_center()
 		player_sprite.position = player_position
+		companion_avatar.snap_to(player_position)
 	_refresh_interaction_proximity()
 	_refresh_renderer()
 
@@ -153,6 +160,7 @@ func restore_position(position: Vector2, room_id: StringName) -> void:
 		return
 	player_position = position if _is_walkable(position) else room.bounds.get_center()
 	player_sprite.position = player_position
+	companion_avatar.snap_to(player_position)
 	_refresh_interaction_proximity()
 	_refresh_renderer()
 
