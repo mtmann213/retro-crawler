@@ -142,6 +142,7 @@ func test_dungeon_screen_restores_a_complete_checkpoint() -> void:
 	original.floor_state.clock_started = true
 	original.floor_state.get_room_state(&"room_broken_junction").encounter_completed = true
 	original.player_run_state = {"current_hp": 63, "resources": {"stamina": 4}}
+	original.map_area.restore_position(Vector2(350, 102), &"room_processing_hall")
 	var patch := original.reward_session.get_item(&"item_field_patch")
 	InventoryRules.add_item(original.reward_session.inventory, patch, 2)
 	var checkpoint := original.create_session_snapshot()
@@ -154,6 +155,7 @@ func test_dungeon_screen_restores_a_complete_checkpoint() -> void:
 	assert_true(restored.floor_state.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_eq(restored.player_run_state.current_hp, 63)
 	assert_eq(restored.reward_session.inventory.get_quantity(&"item_field_patch"), 2)
+	assert_eq(restored.map_area.player_position, Vector2(350, 102))
 
 
 func test_midcombat_checkpoint_restarts_the_pending_encounter() -> void:
@@ -174,7 +176,7 @@ func test_midcombat_checkpoint_restarts_the_pending_encounter() -> void:
 	assert_false(restored.exploration_view.visible)
 
 
-func test_controller_focus_recovers_after_a_focused_exit_is_replaced() -> void:
+func test_controller_focus_returns_to_world_after_physical_room_entry() -> void:
 	var screen := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
 	add_child_autofree(screen)
 	await get_tree().process_frame
@@ -183,18 +185,14 @@ func test_controller_focus_recovers_after_a_focused_exit_is_replaced() -> void:
 	await get_tree().process_frame
 	while screen.announcement_panel.visible:
 		(screen.announcement_panel.get_node("%DismissButton") as Button).pressed.emit()
-	var cache_button: Button
-	for child: Button in screen.exit_list.get_children():
-		if "MAINTENANCE CACHE" in child.text:
-			cache_button = child
-			break
-	assert_not_null(cache_button)
-	cache_button.grab_focus()
-	cache_button.pressed.emit()
+	screen.map_area.grab_focus()
+	screen.map_area.player_position = Vector2(205, 30)
+	screen.map_area.player_sprite.position = screen.map_area.player_position
+	screen.map_area._check_room_entry()
 	await get_tree().process_frame
 	await get_tree().process_frame
 	assert_eq(screen.floor_state.current_room_id, &"room_maintenance_cache")
-	assert_eq(get_viewport().gui_get_focus_owner(), screen.interaction_button)
+	assert_eq(get_viewport().gui_get_focus_owner(), screen.map_area)
 
 
 func test_pending_narrative_queue_survives_restore_until_acknowledged() -> void:

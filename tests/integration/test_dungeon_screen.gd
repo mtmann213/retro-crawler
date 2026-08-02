@@ -3,14 +3,13 @@ extends GutTest
 const DUNGEON_SCREEN := preload("res://scenes/dungeon/dungeon_screen.tscn")
 
 
-func test_initial_room_pauses_clock_and_advertises_move_cost() -> void:
+func test_initial_room_pauses_clock_and_advertises_room_entry_cost() -> void:
 	var screen := await _spawn_screen()
 	assert_eq(screen.floor_state.current_room_id, &"room_intake_shelter")
 	assert_false(screen.floor_state.clock_started)
 	assert_eq(screen.floor_state.remaining_seconds, 720)
 	assert_string_contains((screen.get_node("%FloorClock") as FloorClock).time_label.text, "12:00")
-	var exits := screen.get_node("%ExitList") as GridContainer
-	assert_string_contains((exits.get_child(0) as Button).text, "-15 SEC")
+	assert_string_contains((screen.get_node("ExplorationView/Margin/Layout/Footer") as Label).text, "ROOM ENTRY: -15 SEC")
 	assert_eq(
 		(screen.get_node("%CombatHost") as Control).mouse_filter,
 		Control.MOUSE_FILTER_IGNORE,
@@ -25,17 +24,30 @@ func test_opening_inventory_costs_no_time() -> void:
 	var inventory := screen.get_node("%InventoryScreen") as InventoryScreen
 	assert_true(inventory.visible)
 	(inventory.get_node("%ContinueButton") as Button).pressed.emit()
+	await get_tree().process_frame
 	assert_false(inventory.visible)
 	assert_eq(screen.floor_state.remaining_seconds, 720)
+	assert_eq(get_viewport().gui_get_focus_owner(), screen.map_area)
 
 
-func test_clicking_generated_move_button_changes_rooms_without_freeing_signal_sender() -> void:
+func test_entering_a_connected_room_changes_rooms_without_freeing_signal_sender() -> void:
 	var screen := await _spawn_screen()
-	var exits := screen.get_node("%ExitList") as GridContainer
-	(exits.get_child(0) as Button).pressed.emit()
+	screen.map_area.player_position = Vector2(160, 100)
+	screen.map_area.player_sprite.position = screen.map_area.player_position
+	screen.map_area._check_room_entry()
 	await get_tree().process_frame
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
 	assert_eq(screen.floor_state.remaining_seconds, 705)
+	assert_not_null(screen.active_combat)
+
+
+func test_walkable_world_constrains_player_to_rooms_and_connected_corridors() -> void:
+	var screen := await _spawn_screen()
+	assert_true(screen.map_area._is_walkable(Vector2(120, 100)))
+	assert_true(screen.map_area._is_walkable(Vector2(205, 65)))
+	assert_true(screen.map_area._is_walkable(Vector2(280, 100)))
+	assert_false(screen.map_area._is_walkable(Vector2(280, 35)))
+	assert_false(screen.map_area._is_walkable(Vector2(620, 149)))
 
 
 func test_using_inventory_consumable_spends_its_advertised_time() -> void:
@@ -208,9 +220,8 @@ func test_dungeon_screen_fits_the_internal_viewport() -> void:
 	assert_gte(content_rect.position.y, 7.0)
 	assert_lte(content_rect.end.y, 353.0)
 	var map_rect := screen.map_area.get_global_rect()
-	for child: Node in screen.map_area.get_children():
-		var room_button := child as Button
-		assert_true(map_rect.encloses(room_button.get_global_rect()))
+	assert_true(map_rect.has_point(map_rect.position + screen.map_area.player_position))
+	assert_eq(screen.map_area.current_room_id, &"room_broken_junction")
 
 
 func _spawn_screen() -> DungeonScreen:

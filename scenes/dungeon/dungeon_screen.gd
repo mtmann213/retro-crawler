@@ -11,8 +11,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var floor_clock: FloorClock = %FloorClock
 @onready var room_title: Label = %RoomTitle
 @onready var room_description: Label = %RoomDescription
-@onready var map_area: Control = %MapArea
-@onready var exit_list: GridContainer = %ExitList
+@onready var map_area: WalkableWorld = %MapArea
 @onready var interaction_button: DungeonInteractable = %InteractionButton
 @onready var inventory_button: Button = %InventoryButton
 @onready var emergency_button: Button = %EmergencyButton
@@ -40,27 +39,15 @@ func _ready() -> void:
 	interaction_button.interaction_requested.connect(_interact)
 	inventory_button.pressed.connect(_open_inventory)
 	inventory_screen.item_used.connect(_spend_inventory_time)
+	inventory_screen.continue_requested.connect(_return_from_inventory)
 	extract_button.pressed.connect(_extract)
 	emergency_button.pressed.connect(_extract)
 	announcement_panel.event_acknowledged.connect(_acknowledge_dialogue)
-	_build_map()
+	map_area.room_entered.connect(_move_to_room)
+	map_area.interaction_requested.connect(_world_interact)
+	map_area.inventory_requested.connect(_open_inventory)
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_render_room()
-
-
-func _build_map() -> void:
-	for room: RoomDefinition in FLOOR.rooms:
-		var button := Button.new()
-		button.name = String(room.content_id)
-		button.position = room.map_position
-		button.size = Vector2(112, 38)
-		button.text = room.display_name.to_upper()
-		button.clip_text = true
-		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		button.add_theme_font_size_override("font_size", 8)
-		button.tooltip_text = room.description
-		button.pressed.connect(_move_to_room.bind(room.content_id))
-		map_area.add_child(button)
 
 
 func _render_room() -> void:
@@ -68,7 +55,10 @@ func _render_room() -> void:
 	var room_state := floor_state.get_room_state(room.content_id)
 	room_title.text = room.display_name.to_upper()
 	room_description.text = room.description
-	(map_area as DungeonMap).present(room.content_id)
+	var visited: Dictionary[StringName, bool] = {}
+	for room_id: StringName in floor_state.rooms:
+		visited[room_id] = floor_state.get_room_state(room_id).visited
+	map_area.present(room.content_id, visited, room.interaction_label, not room_state.interaction_completed)
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
 	emergency_button.visible = (
@@ -76,24 +66,6 @@ func _render_room() -> void:
 		and not floor_state.boss_defeated
 		and not floor_state.extracted
 	)
-	for child: Node in exit_list.get_children():
-		child.queue_free()
-	for exit_id: StringName in room.connected_room_ids:
-		var destination := FLOOR.get_room(exit_id)
-		var button := Button.new()
-		button.text = "MOVE: %s  //  -%d SEC" % [destination.display_name.to_upper(), FLOOR.room_transition_cost]
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.add_theme_font_size_override("font_size", 9)
-		button.disabled = floor_state.floor_failed or floor_state.extracted
-		button.pressed.connect(_move_to_room.bind(exit_id))
-		exit_list.add_child(button)
-	for map_node: Node in map_area.get_children():
-		var map_button := map_node as Button
-		var map_room_id := StringName(map_button.name)
-		var visited := floor_state.get_room_state(map_room_id).visited
-		map_button.text = ("> " if map_room_id == floor_state.current_room_id else "") + FLOOR.get_room(map_room_id).display_name.to_upper()
-		map_button.disabled = not room.connected_room_ids.has(map_room_id) or floor_state.floor_failed or floor_state.extracted
-		map_button.modulate = Color.WHITE if visited or map_room_id == floor_state.current_room_id else Color(0.45, 0.48, 0.52)
 	end_panel.visible = floor_state.floor_failed or floor_state.extracted or floor_state.victory_ending
 	if floor_state.victory_ending:
 		end_label.text = "RUN COMPLETE // WARDEN DEFEATED\nThe Service Level is safely shut down."
@@ -105,6 +77,7 @@ func _render_room() -> void:
 		end_label.text = "FLOOR FAILURE // SHUTDOWN DEADLINE REACHED"
 		extract_button.visible = true
 	call_deferred("_focus_default_control")
+	map_area.movement_enabled = not floor_state.floor_failed and not floor_state.extracted and not floor_state.victory_ending
 
 
 func _move_to_room(room_id: StringName) -> void:
@@ -154,12 +127,25 @@ func _interact(interaction_id: StringName) -> void:
 	_request_save()
 
 
+func _world_interact() -> void:
+	var room := FLOOR.get_room(floor_state.current_room_id)
+	if not room.interaction_id.is_empty():
+		_interact(room.interaction_id)
+
+
 func _open_inventory() -> void:
 	var player := PrototypeEncounter.create_simulation().get_combatant(1)
 	EquipmentRules.apply_equipped_items(reward_session.inventory, player, reward_session.item_catalog)
 	CombatScreen.apply_player_run_snapshot(player, player_run_state)
 	inventory_screen.present(reward_session, player, [], "RETURN TO DUNGEON")
 	_append_log("INVENTORY OPENED // 0 sec")
+
+
+func _return_from_inventory() -> void:
+	if inventory_screen.player != null:
+		player_run_state = CombatScreen.create_player_run_snapshot(inventory_screen.player)
+	call_deferred("_focus_default_control")
+	_request_save()
 
 
 func _spend_inventory_time(seconds: int, description: String) -> void:
@@ -288,6 +274,7 @@ func create_session_snapshot() -> SessionSnapshot:
 	snapshot.reward_snapshot = reward_session.to_snapshot()
 	snapshot.player_run_state = player_run_state.duplicate(true)
 	snapshot.dialogue_snapshot = dialogue_state.to_snapshot()
+	snapshot.world_position = map_area.player_position
 	for flag_id: StringName in narrative_flags:
 		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
 	if active_combat != null:
@@ -306,6 +293,7 @@ func restore_session(snapshot: SessionSnapshot) -> void:
 	for flag_id: String in snapshot.narrative_flags:
 		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])
 	_render_room()
+	map_area.restore_position(snapshot.world_position, floor_state.current_room_id)
 	_append_log("SYSTEM // saved session restored")
 	var pending: Array[DialogueEventDefinition] = []
 	for event: DialogueEventDefinition in dialogue_events:
@@ -325,6 +313,7 @@ func _acknowledge_dialogue(event_id: StringName) -> void:
 	dialogue_state.pending_events.erase(event_id)
 	dialogue_state.shown_events[event_id] = true
 	_request_save()
+	call_deferred("_focus_default_control")
 
 
 func _focus_default_control() -> void:
@@ -340,7 +329,5 @@ func _focus_default_control() -> void:
 		return
 	if floor_state.floor_failed and extract_button.visible:
 		extract_button.grab_focus()
-	elif interaction_button.visible and not interaction_button.disabled:
-		interaction_button.grab_focus()
-	elif exit_list.get_child_count() > 0:
-		(exit_list.get_child(0) as Control).grab_focus()
+	else:
+		map_area.grab_focus()

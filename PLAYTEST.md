@@ -19,6 +19,6 @@ Record: player name, platform, controller or keyboard, total minutes, ending rea
 1. What were you trying to accomplish?
 2. When did the clock feel important?
 3. Which combat choice was hardest to understand?
-4. Did the map make your current room and available routes clear?
+4. Did walking through the Service Level make your current room and available routes clear?
 5. Was any text, sound, or animation distracting or hard to read?
 6. Would you choose the cache detour again? Why?

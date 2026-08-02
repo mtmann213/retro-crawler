@@ -10,6 +10,7 @@ var player_run_state: Dictionary = {}
 var dialogue_snapshot: Dictionary = {}
 var narrative_flags: Dictionary = {}
 var pending_encounter_id: StringName = &""
+var world_position := Vector2(70, 102)
 
 
 func to_dictionary() -> Dictionary:
@@ -21,6 +22,7 @@ func to_dictionary() -> Dictionary:
 		"dialogue": dialogue_snapshot.duplicate(true),
 		"narrative_flags": narrative_flags.duplicate(true),
 		"pending_encounter_id": String(pending_encounter_id),
+		"world_position": {"x": world_position.x, "y": world_position.y},
 	}
 
 
@@ -33,6 +35,8 @@ static func from_dictionary(data: Dictionary) -> SessionSnapshot:
 	snapshot.dialogue_snapshot = (data.get("dialogue", {}) as Dictionary).duplicate(true)
 	snapshot.narrative_flags = (data.get("narrative_flags", {}) as Dictionary).duplicate(true)
 	snapshot.pending_encounter_id = StringName(data.get("pending_encounter_id", ""))
+	var world: Dictionary = data.get("world_position", {"x": 70, "y": 102})
+	snapshot.world_position = Vector2(float(world.get("x", 70)), float(world.get("y", 102)))
 	return snapshot
 
 
@@ -137,6 +141,14 @@ static func validate_dictionary(data: Dictionary) -> PackedStringArray:
 		errors.append("Warden encounter is not in the Warden chamber.")
 	if encounter_id == "encounter_two_enemy" and room_id not in ["room_broken_junction", "room_processing_hall"]:
 		errors.append("Ordinary encounter is not in an encounter room.")
+	if data.has("world_position"):
+		if not data.world_position is Dictionary:
+			errors.append("World position must be a dictionary.")
+		else:
+			for axis: String in ["x", "y"]:
+				var coordinate = data.world_position.get(axis, null)
+				if not (coordinate is int or coordinate is float) or not is_finite(float(coordinate)):
+					errors.append("World position %s is malformed." % axis)
 	return errors
 
 

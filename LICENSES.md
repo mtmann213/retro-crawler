@@ -20,6 +20,10 @@ No public license has yet been selected for the original source and content in t
 
 `assets/environment/service_level_backdrop.png` was generated specifically for this project with OpenAI image generation on August 1, 2026, from an original project prompt. It was not copied or adapted from a third-party game, book, or stock-asset library. Distribution remains subject to the terms applicable to the account that generated the image.
 
+### Top-down crawler sprite
+
+`assets/characters/crawler_topdown.png` was generated specifically for this project with OpenAI image generation on August 2, 2026, from an original project prompt, then converted from a flat chroma-key background to transparency with the local image-processing helper bundled with Codex. It was not copied or adapted from a third-party character or sprite sheet.
+
 ### Procedural music and effects
 
 `services/audio_director.gd` synthesizes the title, exploration, combat, interface, movement, hit, and healing audio at runtime. It does not embed samples, recordings, MIDI files, or compositions from an external source.
