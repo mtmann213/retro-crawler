@@ -50,6 +50,25 @@ func test_walkable_world_constrains_player_to_rooms_and_connected_corridors() ->
 	assert_false(screen.map_area._is_walkable(Vector2(620, 149)))
 
 
+func test_s_moves_down_without_sending_focus_to_the_action_buttons() -> void:
+	var screen := await _spawn_screen()
+	screen.map_area.grab_focus()
+	var event := InputEventKey.new()
+	event.physical_keycode = KEY_S
+	event.unicode = KEY_S
+	event.pressed = true
+	get_viewport().push_input(event)
+	await get_tree().process_frame
+	assert_eq(get_viewport().gui_get_focus_owner(), screen.map_area)
+	event.pressed = false
+	get_viewport().push_input(event)
+	var start := screen.map_area.player_position
+	Input.action_press(&"move_down")
+	await get_tree().process_frame
+	Input.action_release(&"move_down")
+	assert_gt(screen.map_area.player_position.y, start.y)
+
+
 func test_using_inventory_consumable_spends_its_advertised_time() -> void:
 	var screen := await _spawn_screen()
 	FloorClockRules.start_clock(screen.floor_state)

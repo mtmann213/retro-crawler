@@ -72,6 +72,17 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+func _gui_input(event: InputEvent) -> void:
+	if not movement_enabled or not has_focus():
+		return
+	for action: StringName in [&"move_up", &"move_down", &"move_left", &"move_right"]:
+		if event.is_action_pressed(action):
+			# Movement keys also support menu navigation. Consume them here so
+			# ui_down (S/D-pad down) cannot move focus out of the world mid-walk.
+			accept_event()
+			return
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not movement_enabled or not is_visible_in_tree() or not has_focus():
 		return
