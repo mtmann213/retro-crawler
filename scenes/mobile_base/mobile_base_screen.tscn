@@ -1,0 +1,116 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/mobile_base/mobile_base_screen.gd" id="1_screen"]
+[ext_resource type="Script" path="res://scenes/mobile_base/expedition_map_preview.gd" id="2_preview"]
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.035, 0.043, 0.055, 0.995)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.49, 0.827, 0.988, 1)
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+
+[node name="MobileBaseScreen" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_screen")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.012, 0.02, 0.031, 1)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 8.0
+offset_right = -14.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Panel")
+
+[node name="Layout" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Header" type="HBoxContainer" parent="Panel/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
+theme_override_font_sizes/font_size = 16
+text = "THE WAYFARER // MOBILE BASE"
+
+[node name="Status" type="Label" parent="Panel/Layout/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+text = "CRAWLER RECOVERED // MOX DOCKED"
+
+[node name="Divider" type="HSeparator" parent="Panel/Layout"]
+layout_mode = 2
+
+[node name="ContractLabel" type="Label" parent="Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.996, 0.718, 0.718, 1)
+text = "NEXT CONTRACT"
+
+[node name="ExpeditionMapPreview" type="Control" parent="Panel/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 126)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("2_preview")
+
+[node name="RouteLabel" type="Label" parent="Panel/Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.64, 0.72, 1)
+text = "ROUTE SUMMARY"
+horizontal_alignment = 1
+
+[node name="Notice" type="Label" parent="Panel/Layout"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.988, 0.827, 0.455, 1)
+theme_override_font_sizes/font_size = 9
+text = "NAVIGATION // generated contract surveyed; walkable deployment calibration follows this map pass"
+horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="Panel/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SurveyButton" type="Button" parent="Panel/Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "SURVEY ANOTHER CONTRACT"
+
+[node name="ReturnButton" type="Button" parent="Panel/Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+text = "ARCHIVE RUN AND RETURN TO TITLE"

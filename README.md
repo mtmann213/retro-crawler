@@ -6,6 +6,8 @@ Mox is a visible exploration companion with an authored personality, determinist
 
 The expedition-generation foundation deterministically produces validated 8–12-room plans with a traversable critical route, optional branches, encounter and resource roles, a final objective, and a safe extraction path. Physical placement and rendering of these plans is the next generation milestone.
 
+Defeating the Warden now returns the crawler and Mox to the Wayfarer mobile base. Its navigation board renders the next seeded expedition contract and can survey alternate contracts instead of leaving the completed run on an actionless ending panel.
+
 Visual production follows the original 16-bit-inspired technical and style contract in [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md).
 
 The Service Level world is authored in `content/worlds/service_level_layout.tres`. Its reusable room resources define bounds, visual styles, interaction and encounter sockets, progression barriers, and corridors independently from the movement controller. `WorldRenderer` presents that data as an 8x8 tiled layer with animated room lighting, hostile contacts, encounter warnings, and progression locks, providing the foundation for future imported tilesets and seeded room variants without putting generated geometry into combat or save rules.

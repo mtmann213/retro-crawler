@@ -2,6 +2,7 @@ class_name DungeonScreen
 extends Control
 
 signal session_snapshot_changed(snapshot: SessionSnapshot)
+signal return_to_title_requested
 
 const FLOOR: FloorDefinition = preload("res://content/floors/floor_service_level.tres")
 const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
@@ -19,6 +20,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var event_log: RichTextLabel = %EventLog
 @onready var inventory_screen: InventoryScreen = %InventoryScreen
 @onready var tutorial_guild_screen: TutorialGuildScreen = %TutorialGuildScreen
+@onready var mobile_base_screen: MobileBaseScreen = %MobileBaseScreen
 @onready var end_panel: PanelContainer = %EndPanel
 @onready var end_label: Label = %EndLabel
 @onready var extract_button: Button = %ExtractButton
@@ -55,8 +57,9 @@ func _ready() -> void:
 	inventory_screen.continue_requested.connect(_return_from_inventory)
 	tutorial_guild_screen.continue_requested.connect(_return_from_tutorial_guild)
 	tutorial_guild_screen.progress_changed.connect(_on_guild_progress_changed)
-	extract_button.pressed.connect(_extract)
+	extract_button.pressed.connect(_resolve_end_action)
 	emergency_button.pressed.connect(_extract)
+	mobile_base_screen.return_to_title_requested.connect(return_to_title_requested.emit)
 	announcement_panel.event_acknowledged.connect(_acknowledge_dialogue)
 	map_area.room_entered.connect(_move_to_room)
 	map_area.interaction_requested.connect(_world_interact)
@@ -117,12 +120,14 @@ func _render_room() -> void:
 	end_panel.visible = floor_state.floor_failed or floor_state.extracted or floor_state.victory_ending
 	if floor_state.victory_ending:
 		end_label.text = "RUN COMPLETE // WARDEN DEFEATED\nThe Service Level is safely shut down."
-		extract_button.visible = false
+		extract_button.text = "RETURN TO THE WAYFARER"
+		extract_button.visible = true
 	elif floor_state.extracted:
 		end_label.text = "RUN ENDED // EMERGENCY EXTRACTION COMPLETE\nRooms reached: %d/5  //  Time remaining: %d sec" % [_visited_count(), floor_state.remaining_seconds]
 		extract_button.visible = false
 	elif floor_state.floor_failed:
 		end_label.text = "FLOOR FAILURE // SHUTDOWN DEADLINE REACHED"
+		extract_button.text = "EMERGENCY EXTRACT"
 		extract_button.visible = true
 	call_deferred("_focus_default_control")
 	map_area.movement_enabled = not floor_state.floor_failed and not floor_state.extracted and not floor_state.victory_ending
@@ -340,6 +345,16 @@ func _extract() -> void:
 	_request_save()
 
 
+func _resolve_end_action() -> void:
+	if floor_state.victory_ending:
+		end_panel.visible = false
+		exploration_view.visible = false
+		mobile_base_screen.present(floor_state.run_seed)
+		_append_log("TRANSFER // returned to the Wayfarer mobile base")
+		return
+	_extract()
+
+
 func _append_log(message: String) -> void:
 	event_log.append_text(message + "\n")
 	event_log.scroll_to_line(event_log.get_line_count())
@@ -434,7 +449,7 @@ func _acknowledge_dialogue(event_id: StringName) -> void:
 
 
 func _focus_default_control() -> void:
-	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible or tutorial_guild_screen.visible:
+	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible or tutorial_guild_screen.visible or mobile_base_screen.visible:
 		return
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if (
@@ -444,7 +459,7 @@ func _focus_default_control() -> void:
 		and focus_owner.is_visible_in_tree()
 	):
 		return
-	if floor_state.floor_failed and extract_button.visible:
+	if (floor_state.floor_failed or floor_state.victory_ending) and extract_button.visible:
 		extract_button.grab_focus()
 	else:
 		map_area.grab_focus()

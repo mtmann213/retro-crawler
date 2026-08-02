@@ -117,6 +117,7 @@ func _start_session(snapshot: SessionSnapshot, profile_snapshot: Dictionary = {}
 		dungeon_screen.new_run_seed = RunVariationRules.create_seed()
 		dungeon_screen.new_character_profile = profile_snapshot.duplicate(true)
 	dungeon_screen.session_snapshot_changed.connect(_on_session_snapshot_changed)
+	dungeon_screen.return_to_title_requested.connect(_return_to_title)
 	screen_host.add_child(dungeon_screen)
 	if snapshot != null:
 		dungeon_screen.restore_session(snapshot)
