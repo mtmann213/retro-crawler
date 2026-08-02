@@ -57,6 +57,7 @@ var encounter_faulted: bool = false
 var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
 var completed_encounters: int = 0
+var encounter_seed: int = PrototypeEncounter.DEFAULT_SEED
 var _applied_dungeon_thresholds: Dictionary[int, bool] = {}
 var _boss_presenter := BossPresenter.new()
 
@@ -91,7 +92,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _start_encounter() -> void:
 	inventory_screen.visible = false
 	simulation = PrototypeEncounter.create_simulation(
-		PrototypeEncounter.DEFAULT_SEED,
+		encounter_seed,
 		encounter_id,
 	)
 	selected_target_id = FIRST_ENEMY_ID
@@ -106,7 +107,7 @@ func _start_encounter() -> void:
 	)
 	apply_player_run_snapshot(simulation.get_combatant(PLAYER_ID), carried_player_state)
 	combat_log.clear_entries()
-	combat_log.append_entry("SYSTEM // deterministic encounter loaded", Color("7dd3fc"))
+	combat_log.append_entry("SYSTEM // deterministic encounter loaded // seed %d" % encounter_seed, Color("7dd3fc"))
 	combat_log.append_entry("Choose a target, read each telegraph, then commit an action.")
 	_update_boss_phase()
 	for threshold: int in [360, 180, 60]:
@@ -208,7 +209,7 @@ func _show_rewards() -> void:
 		if loot_table_id.is_empty():
 			loot_table_id = definition.loot_table_id
 		experience_amount += definition.experience_reward
-	var seed_value := PrototypeEncounter.DEFAULT_SEED + completed_encounters
+	var seed_value := encounter_seed + completed_encounters
 	var drops := reward_session.grant_rewards(loot_table_id, experience_amount, seed_value)
 	rewards_granted = true
 	completed_encounters += 1

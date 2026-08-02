@@ -84,6 +84,30 @@ func test_hostile_sprites_appear_for_active_encounters_and_hide_when_cleared() -
 	assert_false(screen.map_area.renderer.hostile_sprites[1].visible)
 
 
+func test_processing_contact_and_combat_use_the_seeded_encounter_variant() -> void:
+	var screen := await _spawn_screen()
+	screen.floor_state = FloorState.new(screen.FLOOR, 23)
+	screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed = true
+	screen._move_to_room(&"room_broken_junction")
+	screen._move_to_room(&"room_processing_hall")
+	await get_tree().process_frame
+	var expected := RunVariationRules.encounter_for_room(
+		screen.floor_state.run_variation,
+		screen.FLOOR.get_room(&"room_processing_hall"),
+	)
+	assert_eq(screen.map_area.encounter_id, expected)
+	assert_eq(screen.map_area.renderer.encounter_id, expected)
+	if expected == PrototypeEncounter.BRUTE_ENCOUNTER_ID:
+		assert_true(screen.map_area.renderer.hostile_sprites[0].visible)
+		assert_false(screen.map_area.renderer.hostile_sprites[1].visible)
+	_approach_encounter(screen, &"room_processing_hall")
+	assert_eq(screen.active_combat.encounter_id, expected)
+	assert_eq(
+		screen.active_combat.encounter_seed,
+		RunVariationRules.combat_seed(screen.floor_state.run_seed, &"room_processing_hall"),
+	)
+
+
 func test_room_interactions_require_the_player_to_reach_the_point_of_interest() -> void:
 	var screen := await _spawn_screen()
 	assert_false(screen.map_area.can_interact_here())

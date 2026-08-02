@@ -14,11 +14,15 @@ var boss_room_reached: bool = false
 var boss_defeated: bool = false
 var victory_ending: bool = false
 var extraction_ending: bool = false
+var run_seed: int = RunVariationRules.DEFAULT_SEED
+var run_variation: Dictionary = {}
 
 
-func _init(definition: FloorDefinition = null) -> void:
+func _init(definition: FloorDefinition = null, seed_value: int = RunVariationRules.DEFAULT_SEED) -> void:
 	if definition == null:
 		return
+	run_seed = seed_value if seed_value > 0 else RunVariationRules.DEFAULT_SEED
+	run_variation = RunVariationRules.generate(run_seed, definition)
 	floor_id = definition.content_id
 	current_room_id = definition.starting_room_id
 	remaining_seconds = definition.initial_time_seconds
@@ -56,13 +60,17 @@ func to_snapshot() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"victory_ending": victory_ending,
 		"extraction_ending": extraction_ending,
+		"run_seed": run_seed,
 		"triggered_thresholds": thresholds,
 		"rooms": room_snapshots,
 	}
 
 
 static func from_snapshot(definition: FloorDefinition, snapshot: Dictionary) -> FloorState:
-	var state := FloorState.new(definition)
+	var state := FloorState.new(
+		definition,
+		int(snapshot.get("run_seed", RunVariationRules.DEFAULT_SEED)),
+	)
 	state.current_room_id = StringName(snapshot.get("current_room_id", state.current_room_id))
 	state.remaining_seconds = int(snapshot.get("remaining_seconds", state.remaining_seconds))
 	state.clock_started = bool(snapshot.get("clock_started", false))
