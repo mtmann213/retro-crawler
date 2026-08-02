@@ -24,6 +24,10 @@ No public license has yet been selected for the original source and content in t
 
 `assets/characters/crawler_topdown.png` was generated specifically for this project with OpenAI image generation on August 2, 2026, from an original project prompt, then converted from a flat chroma-key background to transparency with the local image-processing helper bundled with Codex. It was not copied or adapted from a third-party character or sprite sheet.
 
+### Top-down enemy sprites
+
+`assets/enemies/scrap_hound_topdown.png` and `assets/enemies/sentry_drone_topdown.png` were generated specifically for this project with OpenAI image generation on August 2, 2026, from original project prompts. Both were converted from flat chroma-key backgrounds to transparency and fitted to 256-pixel sprite canvases with local image-processing tools. They were not copied or adapted from third-party characters, games, or sprite sheets.
+
 ### Procedural music and effects
 
 `services/audio_director.gd` synthesizes the title, exploration, combat, interface, movement, hit, and healing audio at runtime. It does not embed samples, recordings, MIDI files, or compositions from an external source.

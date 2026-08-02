@@ -12,6 +12,7 @@ const LAYOUT: WorldLayoutDefinition = preload("res://content/worlds/service_leve
 const MOVE_SPEED := 82.0
 const INTERACTION_RADIUS := 24.0
 const ENCOUNTER_RADIUS := 24.0
+const PLAYER_SCALE := Vector2(0.042, 0.042)
 
 var player_position := LAYOUT.starting_position
 var current_room_id: StringName = &"room_intake_shelter"
@@ -24,6 +25,7 @@ var renderer := WorldRenderer.new()
 var player_sprite := Sprite2D.new()
 var _interaction_in_range := false
 var _encounter_triggered := false
+var _movement_phase := 0.0
 
 
 func _ready() -> void:
@@ -37,7 +39,8 @@ func _ready() -> void:
 	atlas.atlas = PLAYER_TEXTURE
 	atlas.region = Rect2(340, 180, 580, 770)
 	player_sprite.texture = atlas
-	player_sprite.scale = Vector2(0.042, 0.042)
+	player_sprite.scale = PLAYER_SCALE
+	player_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	player_sprite.position = player_position
 	player_sprite.z_index = 5
 	add_child(player_sprite)
@@ -49,6 +52,7 @@ func _process(delta: float) -> void:
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if direction.is_zero_approx():
+		_animate_player(Vector2.ZERO, delta)
 		return
 	var motion := direction.normalized() * MOVE_SPEED * delta
 	var next := player_position
@@ -59,11 +63,26 @@ func _process(delta: float) -> void:
 	if _is_walkable(vertical):
 		next = vertical
 	player_position = next
-	player_sprite.position = player_position
+	_animate_player(direction.normalized(), delta)
 	_check_room_entry()
 	_refresh_interaction_proximity()
 	_check_encounter_proximity()
 	_refresh_renderer()
+
+
+func _animate_player(direction: Vector2, delta: float) -> void:
+	if direction.is_zero_approx():
+		player_sprite.position = player_sprite.position.lerp(player_position, minf(delta * 12.0, 1.0))
+		player_sprite.rotation = lerpf(player_sprite.rotation, 0.0, minf(delta * 10.0, 1.0))
+		player_sprite.scale = player_sprite.scale.lerp(PLAYER_SCALE, minf(delta * 10.0, 1.0))
+		return
+	_movement_phase += delta * 13.0
+	var step := sin(_movement_phase)
+	player_sprite.position = player_position + Vector2(0, absf(step) * -0.9)
+	player_sprite.rotation = direction.x * 0.045 + step * 0.012
+	player_sprite.scale = PLAYER_SCALE * (1.0 + absf(step) * 0.035)
+	if not is_zero_approx(direction.x):
+		player_sprite.flip_h = direction.x < 0.0
 
 
 func _gui_input(event: InputEvent) -> void:

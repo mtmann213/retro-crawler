@@ -68,6 +68,22 @@ func test_service_level_uses_a_valid_authored_world_layout_and_separate_renderer
 		assert_not_null(layout.get_room(room.content_id), "Missing world room for %s." % room.content_id)
 
 
+func test_hostile_sprites_appear_for_active_encounters_and_hide_when_cleared() -> void:
+	var screen := await _spawn_screen()
+	screen._move_to_room(&"room_broken_junction")
+	await get_tree().process_frame
+	assert_eq(screen.map_area.renderer.hostile_sprites.size(), 2)
+	assert_true(screen.map_area.renderer.hostile_sprites[0].visible)
+	assert_true(screen.map_area.renderer.hostile_sprites[1].visible)
+	assert_not_null(screen.map_area.renderer.hostile_sprites[0].texture)
+	assert_not_null(screen.map_area.renderer.hostile_sprites[1].texture)
+	screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed = true
+	screen._render_room()
+	await get_tree().process_frame
+	assert_false(screen.map_area.renderer.hostile_sprites[0].visible)
+	assert_false(screen.map_area.renderer.hostile_sprites[1].visible)
+
+
 func test_room_interactions_require_the_player_to_reach_the_point_of_interest() -> void:
 	var screen := await _spawn_screen()
 	assert_false(screen.map_area.can_interact_here())

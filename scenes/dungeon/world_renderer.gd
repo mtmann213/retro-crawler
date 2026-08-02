@@ -3,6 +3,8 @@ extends Node2D
 
 const INTERACTION_RADIUS := 24.0
 const ENCOUNTER_RADIUS := 24.0
+const SCRAP_HOUND_TEXTURE := preload("res://assets/enemies/scrap_hound_topdown.png")
+const SENTRY_DRONE_TEXTURE := preload("res://assets/enemies/sentry_drone_topdown.png")
 
 var layout: WorldLayoutDefinition
 var current_room_id: StringName
@@ -11,6 +13,28 @@ var interaction_text := ""
 var interaction_available := false
 var interaction_in_range := false
 var encounter_available := false
+var hostile_sprites: Array[Sprite2D] = []
+var _animation_time := 0.0
+
+
+func _ready() -> void:
+	for texture: Texture2D in [SCRAP_HOUND_TEXTURE, SENTRY_DRONE_TEXTURE]:
+		var hostile := Sprite2D.new()
+		hostile.texture = texture
+		hostile.scale = Vector2(0.115, 0.115)
+		hostile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		hostile.z_index = 4
+		hostile.visible = false
+		hostile_sprites.append(hostile)
+		add_child(hostile)
+
+
+func _process(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
+	_animation_time += delta
+	_update_hostile_animation()
+	queue_redraw()
 
 
 func present(
@@ -29,6 +53,7 @@ func present(
 	interaction_available = can_interact
 	interaction_in_range = in_range
 	encounter_available = has_encounter
+	_sync_hostile_visibility()
 	queue_redraw()
 
 
@@ -47,6 +72,8 @@ func _draw() -> void:
 		var visited: bool = visited_room_ids.get(room.content_id, false) or room.content_id == current_room_id
 		_draw_room(room, visited)
 	var current := layout.get_room(current_room_id)
+	if current != null:
+		_draw_room_ambience(current)
 	if current != null and encounter_available and current.has_encounter_point():
 		_draw_encounter(current)
 		_draw_locked_exits(current)
@@ -85,15 +112,46 @@ func _draw_interaction(room: WorldRoomDefinition, canvas_size: Vector2) -> void:
 
 
 func _draw_encounter(room: WorldRoomDefinition) -> void:
-	draw_arc(room.encounter_point, ENCOUNTER_RADIUS, 0, TAU, 32, Color("fb7185", 0.28), 1.0)
-	for index: int in room.encounter_count:
-		var offset := Vector2((index - (room.encounter_count - 1) * 0.5) * 12.0, 0)
-		var hostile := room.encounter_point + offset
-		draw_circle(hostile, 5.0, Color("7f1d2d"), true)
-		draw_rect(Rect2(hostile + Vector2(-4, 4), Vector2(8, 6)), Color("fb7185"), true)
-		draw_circle(hostile + Vector2(0, -1), 1.5, Color("fef2f2"), true)
+	var pulse := 0.5 + sin(_animation_time * 4.0) * 0.5
+	draw_circle(room.encounter_point, ENCOUNTER_RADIUS + pulse * 2.0, Color("7f1d2d", 0.08 + pulse * 0.05), true)
+	draw_arc(room.encounter_point, ENCOUNTER_RADIUS + pulse * 2.0, 0, TAU, 32, Color("fb7185", 0.42), 1.0)
+	draw_arc(room.encounter_point, ENCOUNTER_RADIUS - 5.0, -PI * 0.15, PI * 1.15, 20, Color("fecdd3", 0.34), 1.0)
 	var width := (get_parent() as Control).size.x
 	draw_string(ThemeDB.fallback_font, Vector2(8, (get_parent() as Control).size.y - 5), "HOSTILES // APPROACH TO ENGAGE // PROGRESSION ROUTES LOCKED", HORIZONTAL_ALIGNMENT_CENTER, width - 16, 7, Color("fb7185"))
+
+
+func _sync_hostile_visibility() -> void:
+	var room := layout.get_room(current_room_id) if layout != null else null
+	var should_show := encounter_available and room != null and room.has_encounter_point()
+	for index: int in hostile_sprites.size():
+		hostile_sprites[index].visible = should_show and index < room.encounter_count
+	_update_hostile_animation()
+
+
+func _update_hostile_animation() -> void:
+	if layout == null:
+		return
+	var room := layout.get_room(current_room_id)
+	if room == null or not room.has_encounter_point():
+		return
+	for index: int in hostile_sprites.size():
+		var hostile := hostile_sprites[index]
+		if not hostile.visible:
+			continue
+		var phase := _animation_time * (4.5 if index == 0 else 3.2) + index * 1.7
+		var offset := Vector2((index - 0.5) * 28.0, sin(phase) * (0.8 if index == 0 else 1.8))
+		hostile.position = room.encounter_point + offset
+		hostile.rotation = sin(phase * 0.7) * (0.025 if index == 0 else 0.055)
+		var pulse := 1.0 + sin(phase) * (0.018 if index == 0 else 0.035)
+		hostile.scale = Vector2(0.115, 0.115) * pulse
+
+
+func _draw_room_ambience(room: WorldRoomDefinition) -> void:
+	var breath := 0.5 + sin(_animation_time * 1.7) * 0.5
+	var inset := room.bounds.grow(-4.0)
+	draw_rect(inset, Color("38bdf8", 0.012 + breath * 0.014), true)
+	for light_x: float in [inset.position.x + 12.0, inset.end.x - 12.0]:
+		draw_circle(Vector2(light_x, inset.position.y + 7.0), 2.0 + breath, Color("7dd3fc", 0.28 + breath * 0.18), true)
 
 
 func _draw_locked_exits(room: WorldRoomDefinition) -> void:
