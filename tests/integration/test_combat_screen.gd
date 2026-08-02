@@ -97,6 +97,9 @@ func test_screen_fits_the_internal_viewport() -> void:
 	var minimum_size := screen.get_combined_minimum_size()
 	assert_lte(minimum_size.x, 640.0)
 	assert_lte(minimum_size.y, 360.0)
+	var content_rect := (screen.get_node("Margin/Layout") as VBoxContainer).get_global_rect()
+	assert_gte(content_rect.position.x, 10.0)
+	assert_lte(content_rect.end.x, 630.0)
 	assert_true((screen.get_node("%RestartButton") as Button).get_global_rect().end.y <= 360.0)
 
 

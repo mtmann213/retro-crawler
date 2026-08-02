@@ -225,6 +225,18 @@ func test_title_and_pause_screens_fit_the_internal_viewport() -> void:
 		assert_lte(screen.get_combined_minimum_size().y, 360.0)
 
 
+func test_pause_panel_keeps_a_visible_margin_inside_the_viewport() -> void:
+	var pause := (load("res://scenes/menus/pause_menu.tscn") as PackedScene).instantiate() as PauseMenu
+	add_child_autofree(pause)
+	pause.visible = true
+	await get_tree().process_frame
+	var panel := pause.get_node("Panel") as PanelContainer
+	assert_gte(panel.position.x, 8.0)
+	assert_gte(panel.position.y, 8.0)
+	assert_lte(panel.position.x + panel.size.x, 632.0)
+	assert_lte(panel.position.y + panel.size.y, 352.0)
+
+
 func _sample_snapshot() -> SessionSnapshot:
 	var floor := FloorState.new(FLOOR)
 	floor.current_room_id = &"room_broken_junction"

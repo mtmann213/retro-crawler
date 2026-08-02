@@ -9,7 +9,7 @@ func test_initial_room_pauses_clock_and_advertises_move_cost() -> void:
 	assert_false(screen.floor_state.clock_started)
 	assert_eq(screen.floor_state.remaining_seconds, 720)
 	assert_string_contains((screen.get_node("%FloorClock") as FloorClock).time_label.text, "12:00")
-	var exits := screen.get_node("%ExitList") as HBoxContainer
+	var exits := screen.get_node("%ExitList") as GridContainer
 	assert_string_contains((exits.get_child(0) as Button).text, "-15 SEC")
 	assert_eq(
 		(screen.get_node("%CombatHost") as Control).mouse_filter,
@@ -31,7 +31,7 @@ func test_opening_inventory_costs_no_time() -> void:
 
 func test_clicking_generated_move_button_changes_rooms_without_freeing_signal_sender() -> void:
 	var screen := await _spawn_screen()
-	var exits := screen.get_node("%ExitList") as HBoxContainer
+	var exits := screen.get_node("%ExitList") as GridContainer
 	(exits.get_child(0) as Button).pressed.emit()
 	await get_tree().process_frame
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
@@ -198,6 +198,19 @@ func test_dungeon_screen_fits_the_internal_viewport() -> void:
 	var minimum_size := screen.get_combined_minimum_size()
 	assert_lte(minimum_size.x, 640.0)
 	assert_lte(minimum_size.y, 360.0)
+	screen.floor_state.current_room_id = &"room_broken_junction"
+	screen.floor_state.get_room_state(&"room_broken_junction").visited = true
+	screen._render_room()
+	await get_tree().process_frame
+	var content_rect := (screen.get_node("ExplorationView/Margin/Layout") as VBoxContainer).get_global_rect()
+	assert_gte(content_rect.position.x, 10.0)
+	assert_lte(content_rect.end.x, 630.0)
+	assert_gte(content_rect.position.y, 7.0)
+	assert_lte(content_rect.end.y, 353.0)
+	var map_rect := screen.map_area.get_global_rect()
+	for child: Node in screen.map_area.get_children():
+		var room_button := child as Button
+		assert_true(map_rect.encloses(room_button.get_global_rect()))
 
 
 func _spawn_screen() -> DungeonScreen:

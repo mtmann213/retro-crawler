@@ -12,7 +12,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var room_title: Label = %RoomTitle
 @onready var room_description: Label = %RoomDescription
 @onready var map_area: Control = %MapArea
-@onready var exit_list: HBoxContainer = %ExitList
+@onready var exit_list: GridContainer = %ExitList
 @onready var interaction_button: DungeonInteractable = %InteractionButton
 @onready var inventory_button: Button = %InventoryButton
 @onready var emergency_button: Button = %EmergencyButton
@@ -55,6 +55,9 @@ func _build_map() -> void:
 		button.position = room.map_position
 		button.size = Vector2(112, 38)
 		button.text = room.display_name.to_upper()
+		button.clip_text = true
+		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.add_theme_font_size_override("font_size", 8)
 		button.tooltip_text = room.description
 		button.pressed.connect(_move_to_room.bind(room.content_id))
 		map_area.add_child(button)
@@ -79,6 +82,8 @@ func _render_room() -> void:
 		var destination := FLOOR.get_room(exit_id)
 		var button := Button.new()
 		button.text = "MOVE: %s  //  -%d SEC" % [destination.display_name.to_upper(), FLOOR.room_transition_cost]
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 9)
 		button.disabled = floor_state.floor_failed or floor_state.extracted
 		button.pressed.connect(_move_to_room.bind(exit_id))
 		exit_list.add_child(button)
