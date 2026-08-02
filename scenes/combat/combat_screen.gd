@@ -43,6 +43,8 @@ const SECOND_ENEMY_ID := 3
 @onready var restart_button: Button = %RestartButton
 @onready var rewards_button: Button = %RewardsButton
 @onready var combat_log: CombatLog = %CombatLog
+@onready var impact_flash: ColorRect = %ImpactFlash
+@onready var impact_label: Label = %ImpactLabel
 @onready var inventory_screen: InventoryScreen = %InventoryScreen
 
 var simulation: CombatSimulation
@@ -280,9 +282,13 @@ func _present_events(events: Array[CombatEvent]) -> void:
 					"%s takes %d damage.%s" % [target.display_name, event.amount, " CRITICAL!" if event.critical else ""],
 					Color("fca5a5") if event.target_id == PLAYER_ID else Color("fde68a"),
 				)
+				_show_impact(event.amount, event.critical, event.target_id == PLAYER_ID)
+				get_tree().call_group("audio_director", "play_hit", event.critical)
 			CombatEvent.EventType.HEALING_DONE:
 				var target := simulation.get_combatant(event.target_id)
 				combat_log.append_entry("%s restores %d HP." % [target.display_name, event.amount], Color("86efac"))
+				_show_heal(event.amount)
+				get_tree().call_group("audio_director", "play_heal")
 			CombatEvent.EventType.DEFENSE_APPLIED:
 				var actor := simulation.get_combatant(event.actor_id)
 				combat_log.append_entry("%s braces for the next attack." % actor.display_name, Color("93c5fd"))
@@ -311,6 +317,28 @@ func _present_events(events: Array[CombatEvent]) -> void:
 				combat_log.append_entry("VICTORY // threats neutralized" if won else "DEFEAT // crawler incapacitated", Color("86efac") if won else Color("fb7185"))
 			CombatEvent.EventType.ACTION_REJECTED:
 				combat_log.append_entry("ACTION REJECTED // %s" % event.reason, Color("fb7185"))
+
+
+func _show_impact(amount: int, critical: bool, hit_player: bool) -> void:
+	impact_label.text = "-%d%s" % [amount, "!" if critical else ""]
+	impact_label.modulate = Color("fca5a5") if hit_player else Color("fde68a")
+	impact_label.modulate.a = 1.0
+	impact_label.scale = Vector2(1.35, 1.35) if critical else Vector2.ONE
+	impact_flash.color = Color(0.95, 0.18, 0.16, 0.18) if hit_player else Color(1.0, 0.72, 0.2, 0.13)
+	var starting_y := impact_label.position.y
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(impact_flash, "color:a", 0.0, 0.18)
+	tween.tween_property(impact_label, "modulate:a", 0.0, 0.42)
+	tween.tween_property(impact_label, "position:y", starting_y - 10.0, 0.42)
+	tween.chain().tween_callback(func() -> void: impact_label.position.y = starting_y)
+
+
+func _show_heal(amount: int) -> void:
+	impact_label.text = "+%d" % amount
+	impact_label.modulate = Color("86efac")
+	impact_label.modulate.a = 1.0
+	var tween := create_tween()
+	tween.tween_property(impact_label, "modulate:a", 0.0, 0.5)
 
 
 func _refresh_view() -> void:

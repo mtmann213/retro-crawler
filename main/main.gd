@@ -6,6 +6,7 @@ const DUNGEON_SCREEN := preload("res://scenes/dungeon/dungeon_screen.tscn")
 @onready var screen_host: Control = %ScreenHost
 @onready var title_screen: TitleScreen = %TitleScreen
 @onready var pause_menu: PauseMenu = %PauseMenu
+@onready var audio_director: AudioDirector = $Services/AudioDirector
 
 var dungeon_screen: DungeonScreen
 var settings: Dictionary = {}
@@ -92,6 +93,7 @@ func _recover_game() -> void:
 
 
 func _start_session(snapshot: SessionSnapshot) -> void:
+	audio_director.set_music_mode(AudioDirector.MusicMode.EXPLORATION)
 	get_tree().paused = false
 	pause_menu.visible = false
 	title_screen.visible = false
@@ -121,11 +123,13 @@ func _pause_game(message: String = "") -> void:
 	get_tree().paused = true
 	pause_menu.present(settings, message)
 	pause_menu.set_input_enabled(_input_armed)
+	audio_director.play_ui()
 
 
 func _resume_game() -> void:
 	pause_menu.visible = false
 	get_tree().paused = false
+	audio_director.play_ui()
 
 
 func _return_to_title() -> void:
@@ -145,6 +149,7 @@ func _update_settings(updated: Dictionary) -> void:
 
 
 func _present_title(message: String = "") -> void:
+	audio_director.set_music_mode(AudioDirector.MusicMode.TITLE)
 	title_screen.set_tutorials_enabled(bool(settings.get("tutorials", true)))
 	title_screen.present(
 		SaveService.has_save(),

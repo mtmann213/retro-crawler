@@ -22,6 +22,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var end_label: Label = %EndLabel
 @onready var extract_button: Button = %ExtractButton
 @onready var announcement_panel: AnnouncementPanel = %AnnouncementPanel
+@onready var transition_overlay: ColorRect = %TransitionOverlay
 
 var floor_state := FloorState.new(FLOOR)
 var reward_session := RewardSession.new()
@@ -64,6 +65,7 @@ func _render_room() -> void:
 	var room_state := floor_state.get_room_state(room.content_id)
 	room_title.text = room.display_name.to_upper()
 	room_description.text = room.description
+	(map_area as DungeonMap).present(room.content_id)
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
 	emergency_button.visible = (
@@ -101,12 +103,14 @@ func _render_room() -> void:
 
 
 func _move_to_room(room_id: StringName) -> void:
+	_pulse_transition()
 	var before := floor_state.current_room_id
 	var events := RoomTransitionRules.transition(floor_state, FLOOR, room_id)
 	_present_clock_events(events)
 	if floor_state.current_room_id == before:
 		_render_room()
 		return
+	get_tree().call_group("audio_director", "play_move")
 	_append_log("ENTERED // %s" % FLOOR.get_room(room_id).display_name.to_upper())
 	if before == FLOOR.starting_room_id:
 		_trigger_narrative(&"floor_started")
@@ -164,6 +168,7 @@ func _spend_inventory_time(seconds: int, description: String) -> void:
 
 
 func _start_combat(encounter_id: StringName) -> void:
+	get_tree().call_group("audio_director", "set_music_mode", AudioDirector.MusicMode.COMBAT)
 	exploration_view.visible = false
 	active_combat = COMBAT_SCREEN.instantiate() as CombatScreen
 	active_combat.reward_session = reward_session
@@ -176,6 +181,7 @@ func _start_combat(encounter_id: StringName) -> void:
 	active_combat.boss_phase_changed.connect(_trigger_narrative)
 	combat_host.add_child(active_combat)
 	active_combat.set_dungeon_clock_remaining(floor_state.remaining_seconds)
+	transition_overlay.color.a = 0.0
 	_append_log("ENCOUNTER STARTED // returning to %s after rewards" % FLOOR.get_room(floor_state.current_room_id).display_name)
 
 
@@ -195,6 +201,7 @@ func _abort_combat_for_deadline() -> void:
 	active_combat.queue_free()
 	active_combat = null
 	exploration_view.visible = true
+	get_tree().call_group("audio_director", "set_music_mode", AudioDirector.MusicMode.EXPLORATION)
 	_append_log("ENCOUNTER ABORTED // shutdown deadline overrides combat")
 	_render_room()
 
@@ -206,6 +213,7 @@ func _return_from_combat() -> void:
 	active_combat.queue_free()
 	active_combat = null
 	exploration_view.visible = true
+	get_tree().call_group("audio_director", "set_music_mode", AudioDirector.MusicMode.EXPLORATION)
 	_append_log("ENCOUNTER CLEARED // returned to %s" % FLOOR.get_room(floor_state.current_room_id).display_name)
 	if defeated_warden:
 		floor_state.boss_defeated = true
@@ -244,6 +252,13 @@ func _extract() -> void:
 func _append_log(message: String) -> void:
 	event_log.append_text(message + "\n")
 	event_log.scroll_to_line(event_log.get_line_count())
+
+
+func _pulse_transition() -> void:
+	transition_overlay.color = Color(0.02, 0.027, 0.039, 0.58)
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_property(transition_overlay, "color:a", 0.0, 0.2)
 
 
 func _visited_count() -> int:

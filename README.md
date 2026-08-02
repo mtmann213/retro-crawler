@@ -1,6 +1,6 @@
 # Retro Crawler
 
-Retro Crawler is a Godot 4.7.1 vertical-slice prototype. Milestone 6 wraps the complete beginning-to-ending run in a title screen, versioned save and backup recovery, persistent audio settings, pause controls, tutorials, and full keyboard/controller navigation.
+Retro Crawler is a Godot 4.7.1 release-candidate vertical slice. The complete beginning-to-ending run now includes a polished Service Level environment, connected room schematic, combat impact feedback, three adaptive retro music modes, sound cues, versioned save recovery, persistent settings, and full keyboard/controller navigation.
 
 ## Play the prototype
 
@@ -25,10 +25,27 @@ godot --headless --path . --editor --quit
 godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 ```
 
-The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and narrative events, optional-detour pressure, Warden phase exclusivity and action availability, both endings, full save/load round trips, corrupt-primary backup recovery, save-version rejection, persistent settings, focus-loss safety, controller bindings, viewport fit, and 50 deterministic combat seeds.
+The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and narrative events, optional-detour pressure, Warden phase exclusivity and action availability, both endings, full save/load round trips, corrupt-primary backup recovery, save-version rejection, persistent settings, focus-loss safety, controller bindings, viewport fit, and deterministic combat seeds.
 
-## Milestone 6 boundaries
+Run the larger release balance sample with:
 
-Included: all prior combat, rewards, exploration, boss, and narrative systems; title/new/continue flows; full session snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; retro UI theme; GUT tests; and headless coverage.
+```powershell
+godot --headless --path . -s tools/balance_simulation.gd
+```
 
-Deferred: shops, crafting, durability, random affixes, set bonuses, final art, authored music and sound assets, animation polish, balance playtests, and distributable builds.
+## Build downloadable versions
+
+Install Godot 4.7.1 export templates, then run:
+
+```powershell
+godot --headless --path . --export-release "Windows Desktop"
+godot --headless --path . --export-release "Linux"
+```
+
+Builds are written under `builds/`. Outside-player release gates and the observation checklist are in `PLAYTEST.md`.
+
+## Release-candidate boundaries
+
+Included: all prior combat, rewards, exploration, boss, and narrative systems; final Service Level backdrop and schematic; transitions and combat feedback; adaptive procedural music and sound cues; title/new/continue flows; full session snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; export presets; GUT tests; and headless coverage.
+
+Deferred beyond this vertical slice: shops, crafting, durability, random affixes, set bonuses, additional floors, and a free-walking overworld. Final release still requires recorded outside playtests and locally installed export templates.
