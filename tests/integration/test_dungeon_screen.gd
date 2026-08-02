@@ -27,12 +27,17 @@ func test_opening_inventory_costs_no_time() -> void:
 func test_using_inventory_consumable_spends_its_advertised_time() -> void:
 	var screen := await _spawn_screen()
 	FloorClockRules.start_clock(screen.floor_state)
+	screen.player_run_state = {
+		"current_hp": 50,
+		"resources": {"stamina": 7, "field_patch_charges": 1},
+	}
 	var patch := screen.reward_session.get_item(&"item_field_patch")
 	InventoryRules.add_item(screen.reward_session.inventory, patch, 1)
 	(screen.get_node("%InventoryButton") as Button).pressed.emit()
 	var inventory := screen.get_node("%InventoryScreen") as InventoryScreen
 	(inventory.get_node("%UseItemButton") as Button).pressed.emit()
 	assert_eq(screen.floor_state.remaining_seconds, 716)
+	assert_eq(int(screen.player_run_state["current_hp"]), 80)
 	assert_string_contains((screen.get_node("%EventLog") as RichTextLabel).get_parsed_text(), "ITEM // Field Patch // -4 sec")
 
 
@@ -67,6 +72,49 @@ func test_combat_rewards_return_to_the_room_that_triggered_them() -> void:
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
 	assert_true(screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_true((screen.get_node("%ExplorationView") as Control).visible)
+
+
+func test_player_health_and_resources_persist_into_the_next_room_encounter() -> void:
+	var screen := await _spawn_screen()
+	screen._move_to_room(&"room_broken_junction")
+	var first_combat := screen.active_combat
+	first_combat.simulation.get_combatant(2).current_hp = 1
+	first_combat.simulation.get_combatant(3).apply_damage(first_combat.simulation.get_combatant(3).max_hp)
+	(first_combat.get_node("%StrikeButton") as Button).pressed.emit()
+	var player := first_combat.simulation.get_combatant(1)
+	player.current_hp = 47
+	player.resources[&"stamina"] = 7
+	player.resources[&"field_patch_charges"] = 1
+	(first_combat.get_node("%RewardsButton") as Button).pressed.emit()
+	var rewards := first_combat.get_node("%InventoryScreen") as InventoryScreen
+	(rewards.get_node("%ContinueButton") as Button).pressed.emit()
+	await get_tree().process_frame
+
+	screen._move_to_room(&"room_processing_hall")
+	var next_player := screen.active_combat.simulation.get_combatant(1)
+	assert_eq(next_player.current_hp, 47)
+	assert_eq(next_player.get_resource(&"stamina"), 7)
+	assert_eq(next_player.get_resource(&"field_patch_charges"), 1)
+
+
+func test_clock_thresholds_apply_real_idempotent_combat_modifiers() -> void:
+	var screen := await _spawn_screen()
+	screen.floor_state.triggered_thresholds = {360: true, 180: true, 60: true}
+	screen._start_combat(PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID)
+	var combat := screen.active_combat
+	var player := combat.simulation.get_combatant(1)
+	var hound := combat.simulation.get_combatant(2)
+	assert_eq(player.get_max_resource(&"stamina"), 35)
+	assert_eq(player.speed, 8)
+	assert_eq(hound.power, 12)
+	assert_eq(hound.defense, 5)
+	combat.activate_dungeon_threshold(180)
+	assert_eq(hound.power, 12)
+	assert_eq(hound.defense, 5)
+	var log_text := (combat.get_node("%CombatLog") as CombatLog).entries.get_parsed_text()
+	assert_string_contains(log_text, "POWER INSTABILITY")
+	assert_string_contains(log_text, "HOSTILE MODIFIERS")
+	assert_string_contains(log_text, "ENVIRONMENTAL FAILURE")
 
 
 func test_deadline_reached_during_combat_aborts_to_extraction_state() -> void:

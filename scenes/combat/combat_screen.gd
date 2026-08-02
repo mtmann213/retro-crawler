@@ -46,10 +46,13 @@ var simulation: CombatSimulation
 var reward_session := RewardSession.new()
 var encounter_id: StringName = PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID
 var continue_starts_encounter: bool = true
+var carried_player_state: Dictionary = {}
+var dungeon_thresholds: Dictionary[int, bool] = {}
 var encounter_faulted: bool = false
 var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
 var completed_encounters: int = 0
+var _applied_dungeon_thresholds: Dictionary[int, bool] = {}
 
 
 func _ready() -> void:
@@ -88,14 +91,19 @@ func _start_encounter() -> void:
 	selected_target_id = FIRST_ENEMY_ID
 	encounter_faulted = false
 	rewards_granted = false
+	_applied_dungeon_thresholds.clear()
 	EquipmentRules.apply_equipped_items(
 		reward_session.inventory,
 		simulation.get_combatant(PLAYER_ID),
 		reward_session.item_catalog,
 	)
+	apply_player_run_snapshot(simulation.get_combatant(PLAYER_ID), carried_player_state)
 	combat_log.clear_entries()
 	combat_log.append_entry("SYSTEM // two-hostile deterministic encounter loaded", Color("7dd3fc"))
 	combat_log.append_entry("Choose a target, read both telegraphs, then commit an action.")
+	for threshold: int in [360, 180, 60]:
+		if dungeon_thresholds.get(threshold, false):
+			activate_dungeon_threshold(threshold)
 	restart_button.visible = false
 	rewards_button.visible = false
 	_present_events(simulation.prepare_next_turn())
@@ -113,6 +121,59 @@ func _continue_after_rewards() -> void:
 func set_dungeon_clock_remaining(remaining_seconds: int) -> void:
 	dungeon_clock_label.visible = true
 	dungeon_clock_label.text = "FLOOR %02d:%02d" % [remaining_seconds / 60, remaining_seconds % 60]
+
+
+func get_player_run_snapshot() -> Dictionary:
+	return create_player_run_snapshot(simulation.get_combatant(PLAYER_ID))
+
+
+static func create_player_run_snapshot(player: CombatantState) -> Dictionary:
+	if player == null:
+		return {}
+	var resource_snapshot := {}
+	for resource_id: StringName in player.resources:
+		resource_snapshot[String(resource_id)] = player.get_resource(resource_id)
+	return {
+		"current_hp": player.current_hp,
+		"resources": resource_snapshot,
+	}
+
+
+static func apply_player_run_snapshot(player: CombatantState, snapshot: Dictionary) -> void:
+	if player == null or snapshot.is_empty():
+		return
+	player.current_hp = clampi(int(snapshot.get("current_hp", player.current_hp)), 1, player.max_hp)
+	var resources: Dictionary = snapshot.get("resources", {})
+	for resource_id: StringName in player.resources:
+		var key := String(resource_id)
+		if resources.has(key):
+			player.resources[resource_id] = clampi(
+				int(resources[key]), 0, player.get_max_resource(resource_id),
+			)
+
+
+func activate_dungeon_threshold(threshold_seconds: int) -> void:
+	if simulation == null or _applied_dungeon_thresholds.get(threshold_seconds, false):
+		return
+	var player := simulation.get_combatant(PLAYER_ID)
+	match threshold_seconds:
+		360:
+			var reduced_stamina := maxi(0, player.get_max_resource(&"stamina") - 5)
+			player.set_resource(&"stamina", player.get_resource(&"stamina"), reduced_stamina)
+			combat_log.append_entry("POWER INSTABILITY // maximum stamina reduced by 5.", Color("fcd34d"))
+		180:
+			for enemy: CombatantState in simulation.combatants:
+				if enemy.team == CombatantState.Team.ENEMY:
+					enemy.power += 2
+					enemy.defense += 1
+			combat_log.append_entry("HOSTILE MODIFIERS // enemy Power +2 and Defense +1.", Color("fb7185"))
+		60:
+			player.speed = maxi(1, player.speed - 2)
+			combat_log.append_entry("ENVIRONMENTAL FAILURE // player Speed reduced by 2.", Color("fb7185"))
+		_:
+			return
+	_applied_dungeon_thresholds[threshold_seconds] = true
+	dungeon_thresholds[threshold_seconds] = true
 
 
 func _on_inventory_item_used(seconds: int, description: String) -> void:

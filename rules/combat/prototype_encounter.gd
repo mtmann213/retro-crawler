@@ -90,6 +90,7 @@ static func _create_skills() -> Array[SkillDefinition]:
 	)
 	heavy_swing.stamina_cost = 12
 	heavy_swing.cooldown_turns = 2
+	heavy_swing.dungeon_time_cost = 8
 
 	var brace := _skill(
 		&"brace", "Brace", "Halves incoming damage until your next turn.",
@@ -111,6 +112,7 @@ static func _create_skills() -> Array[SkillDefinition]:
 	)
 	field_patch.charge_resource_id = &"field_patch_charges"
 	field_patch.charge_cost = 1
+	field_patch.dungeon_time_cost = 4
 
 	var scrap_bite := _skill(
 		&"scrap_bite", "Bite", "A quick mechanical bite.",
@@ -126,6 +128,7 @@ static func _create_skills() -> Array[SkillDefinition]:
 		SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 130,
 		[_damage(9, 1.1)],
 	)
+	charged_shot.dungeon_time_cost = 8
 	var reposition := _skill(
 		&"drone_reposition", "Reposition", "The drone braces and adjusts its aim.",
 		SkillDefinition.ActionKind.BRACE, SkillDefinition.TargetRule.SELF, 75, [],
@@ -135,11 +138,13 @@ static func _create_skills() -> Array[SkillDefinition]:
 		SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 140,
 		[_damage(12, 1.2), _apply_status(&"exposed")],
 	)
+	crush.dungeon_time_cost = 8
 	var slam := _skill(
 		&"brute_slam", "Slam", "A heavy but reliable strike.",
 		SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 110,
 		[_damage(8, 1.0)],
 	)
+	slam.dungeon_time_cost = 8
 
 	var definitions: Array[SkillDefinition] = [
 		quick_strike, heavy_swing, brace, hamstring, field_patch,

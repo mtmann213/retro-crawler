@@ -21,6 +21,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 
 var floor_state := FloorState.new(FLOOR)
 var reward_session := RewardSession.new()
+var player_run_state: Dictionary = {}
 var active_combat: CombatScreen
 
 
@@ -120,11 +121,13 @@ func _interact(interaction_id: StringName) -> void:
 func _open_inventory() -> void:
 	var player := PrototypeEncounter.create_simulation().get_combatant(1)
 	EquipmentRules.apply_equipped_items(reward_session.inventory, player, reward_session.item_catalog)
+	CombatScreen.apply_player_run_snapshot(player, player_run_state)
 	inventory_screen.present(reward_session, player, [], "RETURN TO DUNGEON")
 	_append_log("INVENTORY OPENED // 0 sec")
 
 
 func _spend_inventory_time(seconds: int, description: String) -> void:
+	player_run_state = CombatScreen.create_player_run_snapshot(inventory_screen.player)
 	_present_clock_events(FloorClockRules.spend_time(
 		floor_state, seconds, description, FLOOR.threshold_seconds,
 	))
@@ -139,6 +142,8 @@ func _start_combat(encounter_id: StringName) -> void:
 	active_combat.reward_session = reward_session
 	active_combat.encounter_id = encounter_id
 	active_combat.continue_starts_encounter = false
+	active_combat.carried_player_state = player_run_state.duplicate(true)
+	active_combat.dungeon_thresholds = floor_state.triggered_thresholds.duplicate()
 	active_combat.dungeon_time_spent.connect(_spend_combat_time)
 	active_combat.dungeon_return_requested.connect(_return_from_combat)
 	combat_host.add_child(active_combat)
@@ -168,6 +173,7 @@ func _abort_combat_for_deadline() -> void:
 
 func _return_from_combat() -> void:
 	floor_state.get_room_state(floor_state.current_room_id).encounter_completed = true
+	player_run_state = active_combat.get_player_run_snapshot()
 	active_combat.queue_free()
 	active_combat = null
 	exploration_view.visible = true
@@ -182,6 +188,8 @@ func _present_clock_events(events: Array[FloorClockEvent]) -> void:
 				_append_log("%s // -%d sec // %d remaining" % [event.description, event.seconds, event.remaining_seconds])
 			FloorClockEvent.EventType.THRESHOLD_REACHED:
 				_append_log("CLOCK WARNING // %d-second threshold" % event.threshold_seconds)
+				if active_combat != null and event.threshold_seconds > 0:
+					active_combat.activate_dungeon_threshold(event.threshold_seconds)
 			FloorClockEvent.EventType.DEADLINE_REACHED:
 				_append_log("FLOOR FAILURE // emergency extraction required")
 	if is_node_ready():

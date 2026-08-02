@@ -15,6 +15,17 @@ func test_every_action_deducts_the_advertised_time() -> void:
 		assert_eq(events[0].seconds, cost)
 
 
+func test_prototype_skills_use_authored_dungeon_time_costs() -> void:
+	var simulation := PrototypeEncounter.create_simulation(
+		PrototypeEncounter.DEFAULT_SEED,
+		PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID,
+	)
+	assert_eq(simulation.get_skill(&"quick_strike").dungeon_time_cost, 5)
+	assert_eq(simulation.get_skill(&"heavy_swing").dungeon_time_cost, 8)
+	assert_eq(simulation.get_skill(&"field_patch").dungeon_time_cost, 4)
+	assert_eq(simulation.get_skill(&"drone_charged_shot").dungeon_time_cost, 8)
+
+
 func test_menus_and_paused_safe_room_deduct_no_time() -> void:
 	var state := FloorState.new(FLOOR)
 	assert_true(FloorClockRules.spend_time(state, 20, "paused", FLOOR.threshold_seconds).is_empty())
