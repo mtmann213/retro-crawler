@@ -14,9 +14,11 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var map_area: WalkableWorld = %MapArea
 @onready var interaction_button: DungeonInteractable = %InteractionButton
 @onready var inventory_button: Button = %InventoryButton
+@onready var guild_button: Button = %GuildButton
 @onready var emergency_button: Button = %EmergencyButton
 @onready var event_log: RichTextLabel = %EventLog
 @onready var inventory_screen: InventoryScreen = %InventoryScreen
+@onready var tutorial_guild_screen: TutorialGuildScreen = %TutorialGuildScreen
 @onready var end_panel: PanelContainer = %EndPanel
 @onready var end_label: Label = %EndLabel
 @onready var extract_button: Button = %ExtractButton
@@ -33,6 +35,8 @@ var narrative_flags: Dictionary[StringName, bool] = {}
 var new_run_seed: int = 0
 var new_character_profile: Dictionary = {}
 var character_profile := CharacterProfile.new()
+var tutorial_guild_state := TutorialGuildState.new()
+var tutorials_enabled := true
 
 
 func _ready() -> void:
@@ -45,8 +49,11 @@ func _ready() -> void:
 	dialogue_events = ContentRegistry.get_dialogue_events()
 	interaction_button.interaction_requested.connect(_interact)
 	inventory_button.pressed.connect(_open_inventory)
+	guild_button.pressed.connect(_open_tutorial_guild)
 	inventory_screen.item_used.connect(_spend_inventory_time)
 	inventory_screen.continue_requested.connect(_return_from_inventory)
+	tutorial_guild_screen.continue_requested.connect(_return_from_tutorial_guild)
+	tutorial_guild_screen.progress_changed.connect(_on_guild_progress_changed)
 	extract_button.pressed.connect(_extract)
 	emergency_button.pressed.connect(_extract)
 	announcement_panel.event_acknowledged.connect(_acknowledge_dialogue)
@@ -62,6 +69,8 @@ func _ready() -> void:
 		String(CharacterClassRules.get_definition(character_profile.class_id).display_name).to_upper(),
 	])
 	map_area.set_character_appearance(CharacterClassRules.color_for(character_profile.color_id))
+	if tutorials_enabled:
+		_append_log("GUILD LINK // optional field lessons available in Intake Shelter // 0 sec")
 	_render_room()
 
 
@@ -75,6 +84,12 @@ func _render_room() -> void:
 		visited[room_id] = floor_state.get_room_state(room_id).visited
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
+	guild_button.visible = (
+		room.content_id == FLOOR.starting_room_id
+		and not floor_state.floor_failed
+		and not floor_state.extracted
+		and not floor_state.victory_ending
+	)
 	var encounter_id := _encounter_for_room(room)
 	var encounter_pending := (
 		not encounter_id.is_empty()
@@ -198,6 +213,27 @@ func _return_from_inventory() -> void:
 	if inventory_screen.player != null:
 		player_run_state = CombatScreen.create_player_run_snapshot(inventory_screen.player)
 	call_deferred("_focus_default_control")
+	_request_save()
+
+
+func _open_tutorial_guild() -> void:
+	if floor_state.current_room_id != FLOOR.starting_room_id or active_combat != null:
+		return
+	map_area.movement_enabled = false
+	tutorial_guild_screen.present(character_profile, tutorial_guild_state)
+	_append_log("TUTORIAL GUILD OPENED // 0 sec")
+
+
+func _return_from_tutorial_guild() -> void:
+	map_area.movement_enabled = not floor_state.floor_failed and not floor_state.extracted and not floor_state.victory_ending
+	_request_save()
+	call_deferred("_focus_default_control")
+
+
+func _on_guild_progress_changed() -> void:
+	_append_log("GUILD CERTIFICATION // %d/%d lessons complete" % [
+		tutorial_guild_state.completed_count(), TutorialGuildRules.LESSON_IDS.size(),
+	])
 	_request_save()
 
 
@@ -337,6 +373,7 @@ func create_session_snapshot() -> SessionSnapshot:
 	snapshot.dialogue_snapshot = dialogue_state.to_snapshot()
 	snapshot.world_position = map_area.player_position
 	snapshot.character_profile = character_profile.to_snapshot()
+	snapshot.tutorial_snapshot = tutorial_guild_state.to_snapshot()
 	for flag_id: StringName in narrative_flags:
 		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
 	if active_combat != null:
@@ -352,6 +389,7 @@ func restore_session(snapshot: SessionSnapshot) -> void:
 	player_run_state = snapshot.player_run_state.duplicate(true)
 	dialogue_state = DialogueState.from_snapshot(snapshot.dialogue_snapshot)
 	character_profile = CharacterProfile.from_snapshot(snapshot.character_profile)
+	tutorial_guild_state = TutorialGuildState.from_snapshot(snapshot.tutorial_snapshot)
 	narrative_flags.clear()
 	for flag_id: String in snapshot.narrative_flags:
 		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])
@@ -381,7 +419,7 @@ func _acknowledge_dialogue(event_id: StringName) -> void:
 
 
 func _focus_default_control() -> void:
-	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible:
+	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible or tutorial_guild_screen.visible:
 		return
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if (

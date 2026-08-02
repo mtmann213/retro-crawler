@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scenes/dungeon/dungeon_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://ui/components/floor_clock.tscn" id="2_clock"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://ui/components/announcement_panel.tscn" id="6_announcement"]
 [ext_resource type="Texture2D" path="res://assets/environment/service_level_backdrop.png" id="7_backdrop"]
 [ext_resource type="Script" path="res://scenes/dungeon/walkable_world.gd" id="8_map"]
+[ext_resource type="PackedScene" path="res://scenes/menus/tutorial_guild_screen.tscn" id="9_guild"]
 
 [sub_resource type="StyleBoxFlat" id="Panel"]
 bg_color = Color(0.071, 0.084, 0.106, 1)
@@ -148,6 +149,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "INVENTORY  //  0 SEC"
 
+[node name="GuildButton" type="Button" parent="ExplorationView/Margin/Layout/Actions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "TUTORIAL GUILD  //  0 SEC"
+
 [node name="EmergencyButton" type="Button" parent="ExplorationView/Margin/Layout/Actions"]
 unique_name_in_owner = true
 visible = false
@@ -231,6 +239,9 @@ grow_vertical = 2
 mouse_filter = 0
 
 [node name="InventoryScreen" parent="." instance=ExtResource("5_inventory")]
+unique_name_in_owner = true
+
+[node name="TutorialGuildScreen" parent="." instance=ExtResource("9_guild")]
 unique_name_in_owner = true
 
 [node name="TransitionOverlay" type="ColorRect" parent="."]

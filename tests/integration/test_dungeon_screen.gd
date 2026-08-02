@@ -48,6 +48,33 @@ func test_opening_inventory_costs_no_time() -> void:
 	assert_eq(get_viewport().gui_get_focus_owner(), screen.map_area)
 
 
+func test_tutorial_guild_costs_no_time_and_persists_certification() -> void:
+	var screen := await _spawn_screen()
+	assert_true(screen.guild_button.visible)
+	var before := screen.floor_state.remaining_seconds
+	screen.guild_button.pressed.emit()
+	assert_true(screen.tutorial_guild_screen.visible)
+	assert_false(screen.map_area.movement_enabled)
+	assert_eq(screen.floor_state.remaining_seconds, before)
+	screen.tutorial_guild_screen.complete_button.pressed.emit()
+	assert_true(screen.tutorial_guild_state.is_completed(&"guild_orientation"))
+	assert_eq(screen.create_session_snapshot().tutorial_snapshot.completed_lessons, ["guild_orientation"])
+	assert_eq(screen.floor_state.remaining_seconds, before)
+	screen.tutorial_guild_screen.continue_button.pressed.emit()
+	assert_false(screen.tutorial_guild_screen.visible)
+	assert_true(screen.map_area.movement_enabled)
+	assert_eq(screen.floor_state.remaining_seconds, before)
+
+
+func test_tutorial_guild_access_is_limited_to_the_intake_shelter() -> void:
+	var screen := await _spawn_screen()
+	assert_true(screen.guild_button.visible)
+	screen._move_to_room(&"room_broken_junction")
+	assert_false(screen.guild_button.visible)
+	screen._open_tutorial_guild()
+	assert_false(screen.tutorial_guild_screen.visible)
+
+
 func test_entering_a_hostile_room_reveals_contact_before_combat() -> void:
 	var screen := await _spawn_screen()
 	screen.map_area.player_position = Vector2(160, 100)
