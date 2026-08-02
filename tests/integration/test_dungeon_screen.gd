@@ -354,6 +354,29 @@ func test_player_can_defeat_warden_and_reach_victory_ending() -> void:
 	assert_true(screen.floor_state.boss_defeated)
 	assert_true(screen.floor_state.victory_ending)
 	assert_true((screen.get_node("%EndPanel") as PanelContainer).visible)
+	var return_button := screen.get_node("%ExtractButton") as Button
+	assert_true(return_button.visible)
+	assert_eq(return_button.text, "RETURN TO THE WAYFARER")
+	var announcement := screen.get_node("%AnnouncementPanel") as AnnouncementPanel
+	var dismiss_button := announcement.get_node("%DismissButton") as Button
+	for _event_index: int in range(16):
+		if not announcement.visible:
+			break
+		dismiss_button.pressed.emit()
+		await get_tree().process_frame
+	assert_false(announcement.visible, "The automated route must drain every queued story announcement.")
+	await get_tree().process_frame
+	assert_eq(get_viewport().gui_get_focus_owner(), return_button)
+	return_button.pressed.emit()
+	var mobile_base := screen.get_node("%MobileBaseScreen") as MobileBaseScreen
+	assert_true(mobile_base.visible)
+	assert_between(mobile_base.next_plan.rooms.size(), ExpeditionPlan.MIN_ROOMS, ExpeditionPlan.MAX_ROOMS)
+	assert_true(mobile_base.next_plan.validate().is_empty())
+	var first_contract_seed := mobile_base.next_plan.seed
+	(mobile_base.get_node("%SurveyButton") as Button).pressed.emit()
+	assert_ne(mobile_base.next_plan.seed, first_contract_seed)
+	assert_true(mobile_base.next_plan.validate().is_empty())
+	assert_false((screen.get_node("%ExplorationView") as Control).visible)
 
 
 func test_dungeon_screen_fits_the_internal_viewport() -> void:
@@ -382,6 +405,7 @@ func test_visual_layers_keep_world_sprites_behind_overlays() -> void:
 	assert_gt((screen.get_node("%AnnouncementPanel") as AnnouncementPanel).z_index, player_layer)
 	assert_gt((screen.get_node("%InventoryScreen") as InventoryScreen).z_index, player_layer)
 	assert_gt((screen.get_node("%TutorialGuildScreen") as TutorialGuildScreen).z_index, player_layer)
+	assert_gt((screen.get_node("%MobileBaseScreen") as MobileBaseScreen).z_index, player_layer)
 	assert_gt((screen.get_node("%TransitionOverlay") as ColorRect).z_index, player_layer)
 
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scenes/dungeon/dungeon_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://ui/components/floor_clock.tscn" id="2_clock"]
@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" path="res://assets/environment/service_level_backdrop.png" id="7_backdrop"]
 [ext_resource type="Script" path="res://scenes/dungeon/walkable_world.gd" id="8_map"]
 [ext_resource type="PackedScene" path="res://scenes/menus/tutorial_guild_screen.tscn" id="9_guild"]
+[ext_resource type="PackedScene" path="res://scenes/mobile_base/mobile_base_screen.tscn" id="10_base"]
 
 [sub_resource type="StyleBoxFlat" id="Panel"]
 bg_color = Color(0.071, 0.084, 0.106, 1)
@@ -245,6 +246,10 @@ unique_name_in_owner = true
 z_index = 20
 
 [node name="TutorialGuildScreen" parent="." instance=ExtResource("9_guild")]
+unique_name_in_owner = true
+z_index = 20
+
+[node name="MobileBaseScreen" parent="." instance=ExtResource("10_base")]
 unique_name_in_owner = true
 z_index = 20
 

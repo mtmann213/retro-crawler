@@ -240,13 +240,25 @@ func test_title_character_setup_and_pause_screens_fit_the_internal_viewport() ->
 		"res://scenes/title/character_setup.tscn",
 		"res://scenes/menus/pause_menu.tscn",
 		"res://scenes/menus/tutorial_guild_screen.tscn",
+		"res://scenes/mobile_base/mobile_base_screen.tscn",
 	]:
 		var screen := (load(path) as PackedScene).instantiate() as Control
 		add_child_autofree(screen)
-		screen.visible = true
+		if screen is MobileBaseScreen:
+			(screen as MobileBaseScreen).present(12345)
+		else:
+			screen.visible = true
 		await get_tree().process_frame
 		assert_lte(screen.get_combined_minimum_size().x, 640.0)
 		assert_lte(screen.get_combined_minimum_size().y, 360.0)
+		if screen is MobileBaseScreen:
+			var base_panel := screen.get_node("Panel") as PanelContainer
+			assert_gte(base_panel.position.y, 8.0)
+			assert_lte(base_panel.position.y + base_panel.size.y, 352.0)
+			for button_name: String in ["%SurveyButton", "%ReturnButton"]:
+				var action := screen.get_node(button_name) as Button
+				assert_gte(action.get_global_rect().position.y, 0.0)
+				assert_lte(action.get_global_rect().end.y, 360.0)
 
 
 func test_character_setup_emits_a_sanitized_profile() -> void:
