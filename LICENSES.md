@@ -14,4 +14,14 @@ Upstream project: <https://godotengine.org/>
 
 ## Retro Crawler project content
 
-No license has yet been selected for the original source and content in this prototype. All current names, prose, and visuals are original graybox material; no third-party game or novel assets are included.
+No public license has yet been selected for the original source and content in this prototype. All current names, prose, rules, interface elements, and procedural audio code were created specifically for Retro Crawler. No third-party game, book, music, or sound assets are included.
+
+### Service Level environment backdrop
+
+`assets/environment/service_level_backdrop.png` was generated specifically for this project with OpenAI image generation on August 1, 2026, from an original project prompt. It was not copied or adapted from a third-party game, book, or stock-asset library. Distribution remains subject to the terms applicable to the account that generated the image.
+
+### Procedural music and effects
+
+`services/audio_director.gd` synthesizes the title, exploration, combat, interface, movement, hit, and healing audio at runtime. It does not embed samples, recordings, MIDI files, or compositions from an external source.
+
+Before public distribution, the project owner must choose a license for Retro Crawler's original source and content and confirm that the generated backdrop may be distributed under that release model.

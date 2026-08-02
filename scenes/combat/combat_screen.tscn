@@ -121,7 +121,7 @@ theme_override_constants/separation = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
 theme_override_font_sizes/font_size = 13
-text = "RETRO CRAWLER // COMBAT LAB"
+text = "RETRO CRAWLER // TACTICAL LINK"
 
 [node name="HeaderSpacer" type="Control" parent="Margin/Layout/Header"]
 layout_mode = 2
