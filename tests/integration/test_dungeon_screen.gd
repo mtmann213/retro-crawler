@@ -29,6 +29,15 @@ func test_opening_inventory_costs_no_time() -> void:
 	assert_eq(screen.floor_state.remaining_seconds, 720)
 
 
+func test_clicking_generated_move_button_changes_rooms_without_freeing_signal_sender() -> void:
+	var screen := await _spawn_screen()
+	var exits := screen.get_node("%ExitList") as HBoxContainer
+	(exits.get_child(0) as Button).pressed.emit()
+	await get_tree().process_frame
+	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
+	assert_eq(screen.floor_state.remaining_seconds, 705)
+
+
 func test_using_inventory_consumable_spends_its_advertised_time() -> void:
 	var screen := await _spawn_screen()
 	FloorClockRules.start_clock(screen.floor_state)

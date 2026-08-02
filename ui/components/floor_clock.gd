@@ -6,7 +6,7 @@ extends PanelContainer
 
 
 func present(state: FloorState) -> void:
-	var minutes := state.remaining_seconds / 60
+	var minutes := int(state.remaining_seconds / 60.0)
 	var seconds := state.remaining_seconds % 60
 	time_label.text = "%02d:%02d" % [minutes, seconds]
 	if not state.clock_started:

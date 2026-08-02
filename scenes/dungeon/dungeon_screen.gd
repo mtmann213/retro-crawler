@@ -69,7 +69,7 @@ func _render_room() -> void:
 		and not floor_state.extracted
 	)
 	for child: Node in exit_list.get_children():
-		child.free()
+		child.queue_free()
 	for exit_id: StringName in room.connected_room_ids:
 		var destination := FLOOR.get_room(exit_id)
 		var button := Button.new()

@@ -126,7 +126,7 @@ func _continue_after_rewards() -> void:
 
 func set_dungeon_clock_remaining(remaining_seconds: int) -> void:
 	dungeon_clock_label.visible = true
-	dungeon_clock_label.text = "FLOOR %02d:%02d" % [remaining_seconds / 60, remaining_seconds % 60]
+	dungeon_clock_label.text = "FLOOR %02d:%02d" % [int(remaining_seconds / 60.0), remaining_seconds % 60]
 
 
 func get_player_run_snapshot() -> Dictionary:
