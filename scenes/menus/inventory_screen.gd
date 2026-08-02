@@ -2,6 +2,7 @@ class_name InventoryScreen
 extends Control
 
 signal continue_requested
+signal item_used(seconds: int, description: String)
 
 const ITEM_CARD_SCENE := preload("res://ui/components/item_card.tscn")
 
@@ -30,6 +31,7 @@ func present(
 	new_session: RewardSession,
 	new_player: CombatantState,
 	rewards: Array[LootDrop],
+	continue_text: String = "CONTINUE TO NEXT ENCOUNTER",
 ) -> void:
 	session = new_session
 	player = new_player
@@ -40,6 +42,7 @@ func present(
 		reward_parts.append("%s x%d" % [definition.display_name, drop.quantity])
 	reward_label.text = "RECOVERED // " + (", ".join(reward_parts) if not reward_parts.is_empty() else "inventory full")
 	selected_item_id = StringName(session.inventory.quantities.keys()[0]) if not session.inventory.quantities.is_empty() else &""
+	continue_button.text = continue_text
 	_rebuild()
 	continue_button.grab_focus()
 
@@ -105,6 +108,7 @@ func _use_selected_item() -> void:
 	var events := InventoryRules.use_item(session.inventory, definition, player)
 	if not events.is_empty():
 		reward_label.text = "%s USED // statistics updated" % definition.display_name.to_upper()
+		item_used.emit(definition.dungeon_time_cost, "ITEM // %s" % definition.display_name)
 		if session.inventory.get_quantity(selected_item_id) == 0:
 			selected_item_id = &""
 		_rebuild()

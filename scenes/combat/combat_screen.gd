@@ -1,6 +1,9 @@
 class_name CombatScreen
 extends Control
 
+signal dungeon_time_spent(seconds: int, description: String)
+signal dungeon_return_requested
+
 const PLAYER_ID := 1
 const FIRST_ENEMY_ID := 2
 const SECOND_ENEMY_ID := 3
@@ -24,6 +27,7 @@ const SECOND_ENEMY_ID := 3
 @onready var enemy_two_statuses: Label = %EnemyTwoStatuses
 @onready var intent_label: Label = %IntentLabel
 @onready var timeline_label: Label = %TimelineLabel
+@onready var dungeon_clock_label: Label = %DungeonClockLabel
 @onready var status_label: Label = %StatusLabel
 @onready var target_label: Label = %TargetLabel
 @onready var strike_button: Button = %StrikeButton
@@ -40,6 +44,8 @@ const SECOND_ENEMY_ID := 3
 
 var simulation: CombatSimulation
 var reward_session := RewardSession.new()
+var encounter_id: StringName = PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID
+var continue_starts_encounter: bool = true
 var encounter_faulted: bool = false
 var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
@@ -56,7 +62,8 @@ func _ready() -> void:
 	target_two_button.pressed.connect(_select_target.bind(SECOND_ENEMY_ID))
 	restart_button.pressed.connect(_start_encounter)
 	rewards_button.pressed.connect(_show_rewards)
-	inventory_screen.continue_requested.connect(_start_encounter)
+	inventory_screen.continue_requested.connect(_continue_after_rewards)
+	inventory_screen.item_used.connect(_on_inventory_item_used)
 	_start_encounter()
 
 
@@ -76,7 +83,7 @@ func _start_encounter() -> void:
 	inventory_screen.visible = false
 	simulation = PrototypeEncounter.create_simulation(
 		PrototypeEncounter.DEFAULT_SEED,
-		PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID,
+		encounter_id,
 	)
 	selected_target_id = FIRST_ENEMY_ID
 	encounter_faulted = false
@@ -94,6 +101,23 @@ func _start_encounter() -> void:
 	_present_events(simulation.prepare_next_turn())
 	_refresh_view()
 	strike_button.grab_focus()
+
+
+func _continue_after_rewards() -> void:
+	if continue_starts_encounter:
+		_start_encounter()
+	else:
+		dungeon_return_requested.emit()
+
+
+func set_dungeon_clock_remaining(remaining_seconds: int) -> void:
+	dungeon_clock_label.visible = true
+	dungeon_clock_label.text = "FLOOR %02d:%02d" % [remaining_seconds / 60, remaining_seconds % 60]
+
+
+func _on_inventory_item_used(seconds: int, description: String) -> void:
+	if not continue_starts_encounter:
+		dungeon_time_spent.emit(seconds, description)
 
 
 func _show_rewards() -> void:
@@ -120,7 +144,12 @@ func _show_rewards() -> void:
 	rewards_granted = true
 	completed_encounters += 1
 	rewards_button.visible = false
-	inventory_screen.present(reward_session, simulation.get_combatant(PLAYER_ID), drops)
+	inventory_screen.present(
+		reward_session,
+		simulation.get_combatant(PLAYER_ID),
+		drops,
+		"CONTINUE TO NEXT ENCOUNTER" if continue_starts_encounter else "RETURN TO DUNGEON",
+	)
 
 
 func _select_target(target_id: int) -> void:
@@ -143,6 +172,7 @@ func _submit_player_action(skill_id: StringName, targets_self: bool) -> void:
 	if _contains_event(player_events, CombatEvent.EventType.ACTION_REJECTED):
 		_refresh_view()
 		return
+	_emit_dungeon_time(active_actor, skill_id)
 
 	while not simulation.combat_finished_flag and not encounter_faulted:
 		active_actor = simulation.get_next_actor()
@@ -156,6 +186,8 @@ func _submit_player_action(skill_id: StringName, targets_self: bool) -> void:
 		_present_events(enemy_events)
 		if _contains_event(enemy_events, CombatEvent.EventType.ACTION_REJECTED):
 			_fault_encounter()
+		else:
+			_emit_dungeon_time(active_actor, enemy_command.skill_id)
 
 	_present_events(simulation.prepare_next_turn())
 	_choose_living_target()
@@ -286,8 +318,8 @@ func _update_skill_button(button: Button, skill_id: StringName, player_can_act: 
 	var usable := player_can_act and cooldown == 0 and player.can_spend_resource(&"stamina", skill.stamina_cost) and (skill.charge_cost == 0 or player.can_spend_resource(skill.charge_resource_id, skill.charge_cost))
 	button.disabled = not usable
 	var suffix := " [CD %d]" % cooldown if cooldown > 0 else ""
-	button.text = skill.display_name.to_upper() + suffix
-	button.tooltip_text = "%s // stamina %d // recovery %d" % [skill.description, skill.stamina_cost, skill.base_recovery]
+	button.text = "%s [-%dS]%s" % [skill.display_name.to_upper(), skill.dungeon_time_cost, suffix]
+	button.tooltip_text = "%s // stamina %d // recovery %d // dungeon time %d sec" % [skill.description, skill.stamina_cost, skill.base_recovery, skill.dungeon_time_cost]
 
 
 func _update_intents(player: CombatantState) -> void:
@@ -298,6 +330,7 @@ func _update_intents(player: CombatantState) -> void:
 			lines.append("%s // NO VALID INTENT" % enemy.display_name.to_upper())
 			continue
 		var detail := skill.display_name.to_upper()
+		detail += " // -%d SEC" % skill.dungeon_time_cost
 		var preview := simulation.get_damage_preview(skill.content_id, enemy.instance_id, player.instance_id, player.is_defending)
 		if preview != Vector2i.ZERO:
 			detail += " // %d-%d DAMAGE" % [preview.x, preview.y]
@@ -335,6 +368,20 @@ func _status_text(combatant: CombatantState) -> String:
 
 func _resource_name(resource_id: StringName) -> String:
 	return "PATCH" if resource_id == &"field_patch_charges" else String(resource_id).to_upper()
+
+
+func _emit_dungeon_time(actor: CombatantState, skill_id: StringName) -> void:
+	var skill := simulation.get_skill(skill_id)
+	if skill == null or skill.dungeon_time_cost <= 0:
+		return
+	combat_log.append_entry(
+		"DUNGEON CLOCK // %s costs %d seconds." % [skill.display_name, skill.dungeon_time_cost],
+		Color("fcd34d"),
+	)
+	dungeon_time_spent.emit(
+		skill.dungeon_time_cost,
+		"COMBAT // %s: %s" % [actor.display_name, skill.display_name],
+	)
 
 
 func _short_name(combatant: CombatantState) -> String:

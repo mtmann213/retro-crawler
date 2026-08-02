@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/combat/combat_screen.tscn" id="1_combat"]
+[ext_resource type="PackedScene" path="res://scenes/dungeon/dungeon_screen.tscn" id="1_dungeon"]
 
 [node name="Main" type="Node"]
 
@@ -10,4 +10,4 @@
 
 [node name="ScreenHost" type="Node" parent="."]
 
-[node name="CombatScreen" parent="ScreenHost" instance=ExtResource("1_combat")]
+[node name="DungeonScreen" parent="ScreenHost" instance=ExtResource("1_dungeon")]

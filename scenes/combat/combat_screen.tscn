@@ -126,6 +126,14 @@ text = "RETRO CRAWLER // COMBAT LAB"
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="DungeonClockLabel" type="Label" parent="Margin/Layout/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+theme_override_font_sizes/font_size = 10
+text = "FLOOR 12:00"
+
 [node name="TimelineLabel" type="Label" parent="Margin/Layout/Header"]
 unique_name_in_owner = true
 layout_mode = 2

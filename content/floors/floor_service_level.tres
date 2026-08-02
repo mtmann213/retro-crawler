@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="FloorDefinition" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/floor_definition.gd" id="1_floor"]
+[ext_resource type="Script" path="res://data/definitions/room_definition.gd" id="2_room"]
+
+[sub_resource type="Resource" id="RoomIntake"]
+script = ExtResource("2_room")
+content_id = &"room_intake_shelter"
+display_name = "Intake Shelter"
+description = "A sealed maintenance refuge. The shutdown clock waits for you to leave."
+connected_room_ids = Array[StringName]([&"room_broken_junction"])
+mandatory = true
+interaction_id = &"inspect_station"
+interaction_label = "INSPECT SUPPLY STATION  //  0 SEC"
+map_position = Vector2(42, 66)
+
+[sub_resource type="Resource" id="RoomJunction"]
+script = ExtResource("2_room")
+content_id = &"room_broken_junction"
+display_name = "Broken Junction"
+description = "Split conduits mark a direct route and an optional maintenance detour."
+connected_room_ids = Array[StringName]([&"room_intake_shelter", &"room_maintenance_cache", &"room_processing_hall"])
+mandatory = true
+encounter_id = &"encounter_two_enemy"
+map_position = Vector2(160, 66)
+
+[sub_resource type="Resource" id="RoomCache"]
+script = ExtResource("2_room")
+content_id = &"room_maintenance_cache"
+display_name = "Maintenance Cache"
+description = "A corroded storage locker may still contain useful field supplies."
+connected_room_ids = Array[StringName]([&"room_broken_junction"])
+interaction_id = &"search_cache"
+interaction_label = "SEARCH CORRODED CACHE  //  -20 SEC"
+interaction_time_cost = 20
+map_position = Vector2(160, 8)
+
+[sub_resource type="Resource" id="RoomProcessing"]
+script = ExtResource("2_room")
+content_id = &"room_processing_hall"
+display_name = "Processing Hall"
+description = "A broad industrial hall blocks the final approach to the warden."
+connected_room_ids = Array[StringName]([&"room_broken_junction", &"room_warden_chamber"])
+mandatory = true
+encounter_id = &"encounter_two_enemy"
+map_position = Vector2(292, 66)
+
+[sub_resource type="Resource" id="RoomWarden"]
+script = ExtResource("2_room")
+content_id = &"room_warden_chamber"
+display_name = "Warden Chamber"
+description = "The sealed boss dais awaits its Milestone 5 occupant. Emergency extraction is online."
+connected_room_ids = Array[StringName]([&"room_processing_hall"])
+mandatory = true
+interaction_id = &"emergency_extract"
+interaction_label = "EMERGENCY EXTRACTION  //  0 SEC"
+map_position = Vector2(430, 66)
+
+[resource]
+script = ExtResource("1_floor")
+content_id = &"floor_service_level"
+display_name = "The Service Level"
+starting_room_id = &"room_intake_shelter"
+initial_time_seconds = 720
+room_transition_cost = 15
+threshold_seconds = Array[int]([360, 180, 60, 0])
+rooms = Array[ExtResource("2_room")]([SubResource("RoomIntake"), SubResource("RoomJunction"), SubResource("RoomCache"), SubResource("RoomProcessing"), SubResource("RoomWarden")])
