@@ -44,6 +44,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		_input_armed = false
+		if is_node_ready():
+			title_screen.set_input_enabled(false)
+			pause_menu.set_input_enabled(false)
 		if is_node_ready() and dungeon_screen != null and not title_screen.visible:
 			call_deferred("_pause_game")
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
@@ -52,7 +55,16 @@ func _notification(what: int) -> void:
 
 func _arm_input_after_focus() -> void:
 	await get_tree().process_frame
+	while (
+		Input.is_action_pressed("ui_accept")
+		or Input.is_action_pressed("confirm")
+		or Input.is_action_pressed("cancel")
+		or Input.is_action_pressed("menu")
+	):
+		await get_tree().process_frame
 	_input_armed = true
+	title_screen.set_input_enabled(true)
+	pause_menu.set_input_enabled(true)
 
 
 func _start_new_game() -> void:
@@ -108,6 +120,7 @@ func _pause_game(message: String = "") -> void:
 		return
 	get_tree().paused = true
 	pause_menu.present(settings, message)
+	pause_menu.set_input_enabled(_input_armed)
 
 
 func _resume_game() -> void:

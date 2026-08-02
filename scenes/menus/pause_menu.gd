@@ -13,6 +13,9 @@ signal settings_changed(settings: Dictionary)
 @onready var tutorials_check: CheckButton = %TutorialsCheck
 @onready var tutorial_label: Label = %TutorialLabel
 @onready var status_label: Label = %StatusLabel
+@onready var resume_button: Button = %ResumeButton
+@onready var save_button: Button = %SaveButton
+@onready var title_button: Button = %TitleButton
 
 var _settings: Dictionary = {}
 var _presenting: bool = false
@@ -48,6 +51,17 @@ func present(settings: Dictionary, message: String = "") -> void:
 
 func set_status(message: String) -> void:
 	status_label.text = message
+
+
+func set_input_enabled(enabled: bool) -> void:
+	resume_button.disabled = not enabled
+	save_button.disabled = not enabled
+	title_button.disabled = not enabled
+	master_slider.editable = enabled
+	music_slider.editable = enabled
+	effects_slider.editable = enabled
+	mute_check.disabled = not enabled
+	tutorials_check.disabled = not enabled
 
 
 func _on_master_changed(value: float) -> void:

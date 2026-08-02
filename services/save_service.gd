@@ -84,7 +84,11 @@ static func _load_path(path: String) -> Dictionary:
 	var migration := SaveMigrator.migrate(parsed as Dictionary)
 	if not migration.get("ok", false):
 		return migration
-	var snapshot := SessionSnapshot.from_dictionary(migration["data"])
+	var migrated_data := migration["data"] as Dictionary
+	var validation_errors := SessionSnapshot.validate_dictionary(migrated_data)
+	if not validation_errors.is_empty():
+		return {"ok": false, "error": "corrupted_save", "details": validation_errors}
+	var snapshot := SessionSnapshot.from_dictionary(migrated_data)
 	return {"ok": true, "snapshot": snapshot}
 
 

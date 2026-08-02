@@ -41,6 +41,7 @@ func _ready() -> void:
 	inventory_screen.item_used.connect(_spend_inventory_time)
 	extract_button.pressed.connect(_extract)
 	emergency_button.pressed.connect(_extract)
+	announcement_panel.event_acknowledged.connect(_acknowledge_dialogue)
 	_build_map()
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_render_room()
@@ -96,8 +97,7 @@ func _render_room() -> void:
 	elif floor_state.floor_failed:
 		end_label.text = "FLOOR FAILURE // SHUTDOWN DEADLINE REACHED"
 		extract_button.visible = true
-	if get_viewport().gui_get_focus_owner() == null:
-		call_deferred("_focus_default_control")
+	call_deferred("_focus_default_control")
 
 
 func _move_to_room(room_id: StringName) -> void:
@@ -270,6 +270,8 @@ func create_session_snapshot() -> SessionSnapshot:
 	snapshot.dialogue_snapshot = dialogue_state.to_snapshot()
 	for flag_id: StringName in narrative_flags:
 		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
+	if active_combat != null:
+		snapshot.pending_encounter_id = active_combat.encounter_id
 	return snapshot
 
 
@@ -285,13 +287,37 @@ func restore_session(snapshot: SessionSnapshot) -> void:
 		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])
 	_render_room()
 	_append_log("SYSTEM // saved session restored")
+	var pending: Array[DialogueEventDefinition] = []
+	for event: DialogueEventDefinition in dialogue_events:
+		if dialogue_state.pending_events.get(event.content_id, false):
+			pending.append(event)
+	if not pending.is_empty():
+		announcement_panel.present_events(pending)
+	if not snapshot.pending_encounter_id.is_empty():
+		call_deferred("_start_combat", snapshot.pending_encounter_id)
 
 
 func _request_save() -> void:
 	session_snapshot_changed.emit(create_session_snapshot())
 
 
+func _acknowledge_dialogue(event_id: StringName) -> void:
+	dialogue_state.pending_events.erase(event_id)
+	dialogue_state.shown_events[event_id] = true
+	_request_save()
+
+
 func _focus_default_control() -> void:
+	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible:
+		return
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	if (
+		focus_owner != null
+		and is_instance_valid(focus_owner)
+		and not focus_owner.is_queued_for_deletion()
+		and focus_owner.is_visible_in_tree()
+	):
+		return
 	if floor_state.floor_failed and extract_button.visible:
 		extract_button.grab_focus()
 	elif interaction_button.visible and not interaction_button.disabled:

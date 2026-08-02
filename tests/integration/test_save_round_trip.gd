@@ -49,6 +49,23 @@ func test_corrupted_primary_save_falls_back_to_last_backup() -> void:
 	assert_true(first.equivalent_to(preserved_backup["snapshot"] as SessionSnapshot))
 
 
+func test_semantically_corrupted_primary_falls_back_to_backup() -> void:
+	var first := _sample_snapshot()
+	assert_true(SaveService.save_session(first, PRIMARY, BACKUP).get("ok", false))
+	var second := _sample_snapshot()
+	second.floor_snapshot["remaining_seconds"] = 222
+	assert_true(SaveService.save_session(second, PRIMARY, BACKUP).get("ok", false))
+	var damaged: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PRIMARY))
+	damaged["floor"]["current_room_id"] = "room_that_does_not_exist"
+	var file := FileAccess.open(PRIMARY, FileAccess.WRITE)
+	file.store_string(JSON.stringify(damaged))
+	file.close()
+	var result := SaveService.load_session(PRIMARY, BACKUP)
+	assert_true(result.get("ok", false))
+	assert_eq(result.get("source"), "backup")
+	assert_true(first.equivalent_to(result["snapshot"] as SessionSnapshot))
+
+
 func test_unsupported_save_version_fails_safely() -> void:
 	var file := FileAccess.open(PRIMARY, FileAccess.WRITE)
 	file.store_string(JSON.stringify({"version": 999}))
@@ -84,6 +101,8 @@ func test_keyboard_and_controller_bindings_cover_mandatory_menu_actions() -> voi
 			has_controller = has_controller or event is InputEventJoypadButton or event is InputEventJoypadMotion
 		assert_true(has_keyboard, "%s requires a keyboard binding." % action)
 		assert_true(has_controller, "%s requires a controller binding." % action)
+	for action: StringName in [&"ui_up", &"ui_down", &"ui_left", &"ui_right"]:
+		assert_true(_has_physical_letter_binding(action), "%s requires its WASD binding." % action)
 
 
 func test_losing_focus_disarms_pause_input_until_a_later_frame() -> void:
@@ -96,6 +115,8 @@ func test_losing_focus_disarms_pause_input_until_a_later_frame() -> void:
 	main.title_screen.visible = false
 	main._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	assert_false(main._input_armed)
+	assert_true(main.title_screen.new_game_button.disabled)
+	assert_true(main.pause_menu.resume_button.disabled)
 	var cancel := InputEventAction.new()
 	cancel.action = &"cancel"
 	cancel.pressed = true
@@ -105,6 +126,11 @@ func test_losing_focus_disarms_pause_input_until_a_later_frame() -> void:
 	dummy_dungeon.free()
 	await get_tree().process_frame
 	assert_false(get_tree().paused)
+	main._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_true(main._input_armed)
+	assert_false(main.title_screen.new_game_button.disabled)
 
 
 func test_dungeon_screen_restores_a_complete_checkpoint() -> void:
@@ -128,6 +154,66 @@ func test_dungeon_screen_restores_a_complete_checkpoint() -> void:
 	assert_true(restored.floor_state.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_eq(restored.player_run_state.current_hp, 63)
 	assert_eq(restored.reward_session.inventory.get_quantity(&"item_field_patch"), 2)
+
+
+func test_midcombat_checkpoint_restarts_the_pending_encounter() -> void:
+	var original := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
+	add_child_autofree(original)
+	await get_tree().process_frame
+	original.floor_state.current_room_id = &"room_broken_junction"
+	original._start_combat(PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID)
+	var checkpoint := original.create_session_snapshot()
+	assert_eq(checkpoint.pending_encounter_id, PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID)
+	var restored := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
+	add_child_autofree(restored)
+	await get_tree().process_frame
+	restored.restore_session(checkpoint)
+	await get_tree().process_frame
+	assert_not_null(restored.active_combat)
+	assert_eq(restored.active_combat.encounter_id, PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID)
+	assert_false(restored.exploration_view.visible)
+
+
+func test_controller_focus_recovers_after_a_focused_exit_is_replaced() -> void:
+	var screen := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
+	add_child_autofree(screen)
+	await get_tree().process_frame
+	screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed = true
+	screen._move_to_room(&"room_broken_junction")
+	await get_tree().process_frame
+	while screen.announcement_panel.visible:
+		(screen.announcement_panel.get_node("%DismissButton") as Button).pressed.emit()
+	var cache_button: Button
+	for child: Button in screen.exit_list.get_children():
+		if "MAINTENANCE CACHE" in child.text:
+			cache_button = child
+			break
+	assert_not_null(cache_button)
+	cache_button.grab_focus()
+	cache_button.pressed.emit()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert_eq(screen.floor_state.current_room_id, &"room_maintenance_cache")
+	assert_eq(get_viewport().gui_get_focus_owner(), screen.interaction_button)
+
+
+func test_pending_narrative_queue_survives_restore_until_acknowledged() -> void:
+	var original := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
+	add_child_autofree(original)
+	await get_tree().process_frame
+	original.narrative_flags[&"took_detour"] = true
+	original._trigger_narrative(&"cache_found")
+	assert_eq(original.announcement_panel.pending_event_ids().size(), 2)
+	var restored := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
+	add_child_autofree(restored)
+	await get_tree().process_frame
+	restored.restore_session(original.create_session_snapshot())
+	assert_eq(restored.announcement_panel.pending_event_ids().size(), 2)
+	(restored.announcement_panel.get_node("%DismissButton") as Button).pressed.emit()
+	assert_eq(restored.announcement_panel.pending_event_ids().size(), 1)
+	(restored.announcement_panel.get_node("%DismissButton") as Button).pressed.emit()
+	assert_true(restored.dialogue_state.pending_events.is_empty())
+	assert_true(restored.dialogue_state.shown_events.get(&"achievement_salvage_instinct", false))
 
 
 func test_title_and_pause_screens_fit_the_internal_viewport() -> void:
@@ -161,3 +247,10 @@ func _sample_snapshot() -> SessionSnapshot:
 func _remove(path: String) -> void:
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+
+
+func _has_physical_letter_binding(action: StringName) -> bool:
+	for event: InputEvent in InputMap.action_get_events(action):
+		if event is InputEventKey and (event as InputEventKey).physical_keycode in [KEY_W, KEY_A, KEY_S, KEY_D]:
+			return true
+	return false
