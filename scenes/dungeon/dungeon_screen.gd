@@ -46,6 +46,7 @@ func _ready() -> void:
 	map_area.room_entered.connect(_move_to_room)
 	map_area.interaction_requested.connect(_world_interact)
 	map_area.inventory_requested.connect(_open_inventory)
+	map_area.interaction_proximity_changed.connect(_sync_interaction_proximity)
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_render_room()
 
@@ -58,9 +59,10 @@ func _render_room() -> void:
 	var visited: Dictionary[StringName, bool] = {}
 	for room_id: StringName in floor_state.rooms:
 		visited[room_id] = floor_state.get_room_state(room_id).visited
-	map_area.present(room.content_id, visited, room.interaction_label, not room_state.interaction_completed)
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
+	map_area.present(room.content_id, visited, room.interaction_label, not room_state.interaction_completed)
+	_sync_interaction_proximity(map_area.can_interact_here(), room.interaction_label)
 	emergency_button.visible = (
 		room.content_id == &"room_warden_chamber"
 		and not floor_state.boss_defeated
@@ -103,7 +105,7 @@ func _move_to_room(room_id: StringName) -> void:
 
 func _interact(interaction_id: StringName) -> void:
 	var room_state := floor_state.get_room_state(floor_state.current_room_id)
-	if room_state.interaction_completed:
+	if room_state.interaction_completed or not map_area.can_interact_here():
 		return
 	match interaction_id:
 		&"inspect_station":
@@ -129,8 +131,15 @@ func _interact(interaction_id: StringName) -> void:
 
 func _world_interact() -> void:
 	var room := FLOOR.get_room(floor_state.current_room_id)
-	if not room.interaction_id.is_empty():
+	if not room.interaction_id.is_empty() and map_area.can_interact_here():
 		_interact(room.interaction_id)
+
+
+func _sync_interaction_proximity(in_range: bool, _prompt: String) -> void:
+	var room := FLOOR.get_room(floor_state.current_room_id)
+	var completed := floor_state.get_room_state(room.content_id).interaction_completed
+	interaction_button.disabled = room.interaction_id.is_empty() or completed or not in_range
+	interaction_button.tooltip_text = "" if in_range else "Walk to the highlighted point of interest to interact."
 
 
 func _open_inventory() -> void:

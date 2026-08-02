@@ -50,6 +50,20 @@ func test_walkable_world_constrains_player_to_rooms_and_connected_corridors() ->
 	assert_false(screen.map_area._is_walkable(Vector2(620, 149)))
 
 
+func test_room_interactions_require_the_player_to_reach_the_point_of_interest() -> void:
+	var screen := await _spawn_screen()
+	assert_false(screen.map_area.can_interact_here())
+	assert_true(screen.interaction_button.disabled)
+	screen.map_area.restore_position(
+		screen.map_area.interaction_point_for_room(&"room_intake_shelter"),
+		&"room_intake_shelter",
+	)
+	assert_true(screen.map_area.can_interact_here())
+	assert_false(screen.interaction_button.disabled)
+	screen._world_interact()
+	assert_true(screen.floor_state.get_room_state(&"room_intake_shelter").interaction_completed)
+
+
 func test_s_moves_down_without_sending_focus_to_the_action_buttons() -> void:
 	var screen := await _spawn_screen()
 	screen.map_area.grab_focus()
@@ -92,6 +106,10 @@ func test_optional_cache_detour_and_search_spend_advertised_time() -> void:
 	screen._move_to_room(&"room_broken_junction")
 	screen._move_to_room(&"room_maintenance_cache")
 	assert_eq(screen.floor_state.remaining_seconds, 690)
+	screen.map_area.restore_position(
+		screen.map_area.interaction_point_for_room(&"room_maintenance_cache"),
+		&"room_maintenance_cache",
+	)
 	(screen.get_node("%InteractionButton") as Button).pressed.emit()
 	assert_eq(screen.floor_state.remaining_seconds, 670)
 	assert_gt(screen.reward_session.inventory.get_quantity(&"item_field_patch"), 0)
@@ -210,6 +228,10 @@ func test_player_can_defeat_warden_and_reach_victory_ending() -> void:
 	screen._move_to_room(&"room_broken_junction")
 	screen._move_to_room(&"room_processing_hall")
 	screen._move_to_room(&"room_warden_chamber")
+	screen.map_area.restore_position(
+		screen.map_area.interaction_point_for_room(&"room_warden_chamber"),
+		&"room_warden_chamber",
+	)
 	(screen.get_node("%InteractionButton") as Button).pressed.emit()
 	var combat := screen.active_combat
 	assert_eq(combat.encounter_id, PrototypeEncounter.WARDEN_ENCOUNTER_ID)
