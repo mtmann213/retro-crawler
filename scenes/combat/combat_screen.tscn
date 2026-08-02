@@ -120,7 +120,7 @@ theme_override_constants/separation = 4
 [node name="Title" type="Label" parent="Margin/Layout/Header"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 12
 text = "RETRO CRAWLER // TACTICAL LINK"
 
 [node name="HeaderSpacer" type="Control" parent="Margin/Layout/Header"]
@@ -150,7 +150,7 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.55, 0.35, 1)
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 9
 text = "WARDEN PHASE // ASSESSMENT"
 
 [node name="IntentPanel" type="PanelContainer" parent="Margin/Layout"]

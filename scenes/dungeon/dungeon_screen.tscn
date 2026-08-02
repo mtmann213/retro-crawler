@@ -183,6 +183,7 @@ horizontal_alignment = 1
 [node name="EndPanel" type="PanelContainer" parent="ExplorationView"]
 unique_name_in_owner = true
 visible = false
+z_index = 10
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -224,6 +225,7 @@ mouse_filter = 2
 
 [node name="AnnouncementPanel" parent="." instance=ExtResource("6_announcement")]
 unique_name_in_owner = true
+z_index = 20
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -240,12 +242,15 @@ mouse_filter = 0
 
 [node name="InventoryScreen" parent="." instance=ExtResource("5_inventory")]
 unique_name_in_owner = true
+z_index = 20
 
 [node name="TutorialGuildScreen" parent="." instance=ExtResource("9_guild")]
 unique_name_in_owner = true
+z_index = 20
 
 [node name="TransitionOverlay" type="ColorRect" parent="."]
 unique_name_in_owner = true
+z_index = 30
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

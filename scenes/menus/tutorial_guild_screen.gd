@@ -45,8 +45,10 @@ func _rebuild_lessons() -> void:
 		var lesson := TutorialGuildRules.get_lesson(lesson_id, character_profile)
 		var button := Button.new()
 		button.name = String(lesson_id)
-		button.text = ("[COMPLETE] " if guild_state.is_completed(lesson_id) else "[OPEN] ") + String(lesson.title)
+		button.text = _lesson_button_text(lesson_id, String(lesson.title))
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.toggle_mode = true
+		button.button_pressed = lesson_id == selected_lesson_id
 		button.pressed.connect(_select_lesson.bind(lesson_id))
 		lesson_list.add_child(button)
 	progress_label.text = "CERTIFICATION // %d/%d LESSONS" % [
@@ -56,7 +58,20 @@ func _rebuild_lessons() -> void:
 
 func _select_lesson(lesson_id: StringName) -> void:
 	selected_lesson_id = lesson_id
+	for child: Node in lesson_list.get_children():
+		if child is Button:
+			var button := child as Button
+			var child_id := StringName(button.name)
+			var lesson := TutorialGuildRules.get_lesson(child_id, character_profile)
+			button.button_pressed = child_id == selected_lesson_id
+			button.text = _lesson_button_text(child_id, String(lesson.title))
 	_refresh_lesson()
+
+
+func _lesson_button_text(lesson_id: StringName, title: String) -> String:
+	var selection := "> " if lesson_id == selected_lesson_id else "  "
+	var status := "[COMPLETE] " if guild_state.is_completed(lesson_id) else "[OPEN] "
+	return selection + status + title
 
 
 func _refresh_lesson() -> void:
