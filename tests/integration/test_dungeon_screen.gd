@@ -55,6 +55,19 @@ func test_walkable_world_constrains_player_to_rooms_and_connected_corridors() ->
 	assert_false(screen.map_area._is_walkable(Vector2(620, 149)))
 
 
+func test_service_level_uses_a_valid_authored_world_layout_and_separate_renderer() -> void:
+	var screen := await _spawn_screen()
+	var layout := ContentRegistry.get_world_layout()
+	assert_not_null(layout)
+	assert_true(layout.validate().is_empty())
+	assert_eq(layout.rooms.size(), 5)
+	assert_eq(layout.corridors.size(), 4)
+	assert_eq(layout.starting_position, Vector2(70, 102))
+	assert_true(screen.map_area.renderer is WorldRenderer)
+	for room: RoomDefinition in screen.FLOOR.rooms:
+		assert_not_null(layout.get_room(room.content_id), "Missing world room for %s." % room.content_id)
+
+
 func test_room_interactions_require_the_player_to_reach_the_point_of_interest() -> void:
 	var screen := await _spawn_screen()
 	assert_false(screen.map_area.can_interact_here())

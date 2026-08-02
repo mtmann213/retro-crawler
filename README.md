@@ -2,6 +2,8 @@
 
 Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending run now includes a physically walkable Service Level, an original top-down crawler, combat impact feedback, three adaptive retro music modes, sound cues, versioned save recovery, persistent settings, and full keyboard/controller navigation.
 
+The Service Level world is authored in `content/worlds/service_level_layout.tres`. Its reusable room resources define bounds, visual styles, interaction and encounter sockets, progression barriers, and corridors independently from the movement controller. `WorldRenderer` presents that data as an 8×8 tiled layer, providing the foundation for future imported tilesets and seeded room variants without putting generated geometry into combat or save rules.
+
 ## Play the prototype
 
 1. Open this folder in Godot 4.7.1.
