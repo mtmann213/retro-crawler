@@ -17,6 +17,24 @@ func test_initial_room_pauses_clock_and_advertises_room_entry_cost() -> void:
 	)
 
 
+func test_custom_profile_applies_to_world_combat_and_player_resources() -> void:
+	var screen := DUNGEON_SCREEN.instantiate() as DungeonScreen
+	screen.new_character_profile = CharacterProfile.new("Nova", &"signalist", &"violet").to_snapshot()
+	add_child_autofree(screen)
+	await get_tree().process_frame
+	assert_eq(screen.character_profile.crawler_name, "Nova")
+	assert_eq(screen.character_profile.class_id, &"signalist")
+	assert_true(screen.map_area.player_sprite.modulate.is_equal_approx(
+		CharacterClassRules.color_for(&"violet").lerp(Color.WHITE, 0.18),
+	))
+	screen._start_combat(PrototypeEncounter.TWO_ENEMY_ENCOUNTER_ID)
+	var player := screen.active_combat.simulation.get_combatant(1)
+	assert_eq(player.display_name, "Nova")
+	assert_eq(player.max_hp, 95)
+	assert_eq(player.get_max_resource(&"stamina"), 50)
+	assert_eq(player.get_resource(&"field_patch_charges"), 3)
+
+
 func test_opening_inventory_costs_no_time() -> void:
 	var screen := await _spawn_screen()
 	(screen.get_node("%InventoryButton") as Button).pressed.emit()

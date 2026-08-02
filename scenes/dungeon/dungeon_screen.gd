@@ -31,11 +31,15 @@ var dialogue_state := DialogueState.new()
 var dialogue_events: Array[DialogueEventDefinition] = []
 var narrative_flags: Dictionary[StringName, bool] = {}
 var new_run_seed: int = 0
+var new_character_profile: Dictionary = {}
+var character_profile := CharacterProfile.new()
 
 
 func _ready() -> void:
 	if new_run_seed > 0:
 		floor_state = FloorState.new(FLOOR, new_run_seed)
+	if not new_character_profile.is_empty():
+		character_profile = CharacterProfile.from_snapshot(new_character_profile)
 	assert(RoomTransitionRules.validate_graph(FLOOR).is_empty())
 	assert(ContentRegistry.validate_all().is_empty())
 	dialogue_events = ContentRegistry.get_dialogue_events()
@@ -53,6 +57,11 @@ func _ready() -> void:
 	map_area.encounter_requested.connect(_world_encounter)
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_append_log("RUN VARIANT // %s" % RunVariationRules.summary(floor_state.run_variation))
+	_append_log("CRAWLER // %s // %s" % [
+		character_profile.crawler_name.to_upper(),
+		String(CharacterClassRules.get_definition(character_profile.class_id).display_name).to_upper(),
+	])
+	map_area.set_character_appearance(CharacterClassRules.color_for(character_profile.color_id))
 	_render_room()
 
 
@@ -178,6 +187,7 @@ func _sync_interaction_proximity(in_range: bool, _prompt: String) -> void:
 
 func _open_inventory() -> void:
 	var player := PrototypeEncounter.create_simulation().get_combatant(1)
+	CharacterClassRules.apply_profile(player, character_profile)
 	EquipmentRules.apply_equipped_items(reward_session.inventory, player, reward_session.item_catalog)
 	CombatScreen.apply_player_run_snapshot(player, player_run_state)
 	inventory_screen.present(reward_session, player, [], "RETURN TO DUNGEON")
@@ -210,6 +220,7 @@ func _start_combat(encounter_id: StringName) -> void:
 	active_combat.encounter_seed = RunVariationRules.combat_seed(
 		floor_state.run_seed, floor_state.current_room_id,
 	)
+	active_combat.character_profile = character_profile.to_snapshot()
 	active_combat.continue_starts_encounter = false
 	active_combat.carried_player_state = player_run_state.duplicate(true)
 	active_combat.dungeon_thresholds = floor_state.triggered_thresholds.duplicate()
@@ -325,6 +336,7 @@ func create_session_snapshot() -> SessionSnapshot:
 	snapshot.player_run_state = player_run_state.duplicate(true)
 	snapshot.dialogue_snapshot = dialogue_state.to_snapshot()
 	snapshot.world_position = map_area.player_position
+	snapshot.character_profile = character_profile.to_snapshot()
 	for flag_id: StringName in narrative_flags:
 		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
 	if active_combat != null:
@@ -339,10 +351,12 @@ func restore_session(snapshot: SessionSnapshot) -> void:
 	reward_session = RewardSession.from_snapshot(snapshot.reward_snapshot)
 	player_run_state = snapshot.player_run_state.duplicate(true)
 	dialogue_state = DialogueState.from_snapshot(snapshot.dialogue_snapshot)
+	character_profile = CharacterProfile.from_snapshot(snapshot.character_profile)
 	narrative_flags.clear()
 	for flag_id: String in snapshot.narrative_flags:
 		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])
 	_render_room()
+	map_area.set_character_appearance(CharacterClassRules.color_for(character_profile.color_id))
 	map_area.restore_position(snapshot.world_position, floor_state.current_room_id)
 	_append_log("SYSTEM // saved session restored")
 	var pending: Array[DialogueEventDefinition] = []

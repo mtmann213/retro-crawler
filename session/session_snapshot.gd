@@ -11,6 +11,7 @@ var dialogue_snapshot: Dictionary = {}
 var narrative_flags: Dictionary = {}
 var pending_encounter_id: StringName = &""
 var world_position := Vector2(70, 102)
+var character_profile: Dictionary = CharacterProfile.new().to_snapshot()
 
 
 func to_dictionary() -> Dictionary:
@@ -23,6 +24,7 @@ func to_dictionary() -> Dictionary:
 		"narrative_flags": narrative_flags.duplicate(true),
 		"pending_encounter_id": String(pending_encounter_id),
 		"world_position": {"x": world_position.x, "y": world_position.y},
+		"character_profile": character_profile.duplicate(true),
 	}
 
 
@@ -35,6 +37,7 @@ static func from_dictionary(data: Dictionary) -> SessionSnapshot:
 	snapshot.dialogue_snapshot = (data.get("dialogue", {}) as Dictionary).duplicate(true)
 	snapshot.narrative_flags = (data.get("narrative_flags", {}) as Dictionary).duplicate(true)
 	snapshot.pending_encounter_id = StringName(data.get("pending_encounter_id", ""))
+	snapshot.character_profile = (data.get("character_profile", CharacterProfile.new().to_snapshot()) as Dictionary).duplicate(true)
 	var world: Dictionary = data.get("world_position", {"x": 70, "y": 102})
 	snapshot.world_position = Vector2(float(world.get("x", 70)), float(world.get("y", 102)))
 	return snapshot
@@ -137,6 +140,11 @@ static func validate_dictionary(data: Dictionary) -> PackedStringArray:
 	for flag_id in (data.get("narrative_flags", {}) as Dictionary):
 		if not data["narrative_flags"][flag_id] is bool:
 			errors.append("Narrative flag %s is malformed." % flag_id)
+	if data.has("character_profile"):
+		if not data.character_profile is Dictionary:
+			errors.append("Character profile must be a dictionary.")
+		else:
+			errors.append_array(CharacterProfile.validate_snapshot(data.character_profile))
 	var encounter_id := String(data.get("pending_encounter_id", ""))
 	if not ["", "encounter_two_enemy", "encounter_brute", "encounter_warden"].has(encounter_id):
 		errors.append("Unknown pending encounter.")

@@ -58,6 +58,7 @@ var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
 var completed_encounters: int = 0
 var encounter_seed: int = PrototypeEncounter.DEFAULT_SEED
+var character_profile: Dictionary = CharacterProfile.new().to_snapshot()
 var _applied_dungeon_thresholds: Dictionary[int, bool] = {}
 var _boss_presenter := BossPresenter.new()
 
@@ -100,6 +101,10 @@ func _start_encounter() -> void:
 	rewards_granted = false
 	_applied_dungeon_thresholds.clear()
 	_boss_presenter = BossPresenter.new()
+	CharacterClassRules.apply_profile(
+		simulation.get_combatant(PLAYER_ID),
+		CharacterProfile.from_snapshot(character_profile),
+	)
 	EquipmentRules.apply_equipped_items(
 		reward_session.inventory,
 		simulation.get_combatant(PLAYER_ID),

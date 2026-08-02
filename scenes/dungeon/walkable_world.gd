@@ -49,6 +49,10 @@ func _ready() -> void:
 	_refresh_renderer()
 
 
+func set_character_appearance(accent_color: Color) -> void:
+	player_sprite.modulate = accent_color.lerp(Color.WHITE, 0.18)
+
+
 func _process(delta: float) -> void:
 	if not movement_enabled or not is_visible_in_tree() or not has_focus():
 		return

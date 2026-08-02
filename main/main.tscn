@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/title/title_screen.tscn" id="2_title"]
 [ext_resource type="PackedScene" path="res://scenes/menus/pause_menu.tscn" id="3_pause"]
 [ext_resource type="Script" path="res://services/audio_director.gd" id="4_audio"]
+[ext_resource type="PackedScene" path="res://scenes/title/character_setup.tscn" id="5_character"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -25,6 +26,9 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TitleScreen" parent="." instance=ExtResource("2_title")]
+unique_name_in_owner = true
+
+[node name="CharacterSetup" parent="." instance=ExtResource("5_character")]
 unique_name_in_owner = true
 
 [node name="PauseMenu" parent="." instance=ExtResource("3_pause")]
