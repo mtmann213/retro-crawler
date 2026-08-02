@@ -32,6 +32,8 @@ func test_save_load_round_trip_produces_equivalent_full_run_state() -> void:
 	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.class_id, "scavenger")
 	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.name, "Latch")
 	assert_eq((result["snapshot"] as SessionSnapshot).tutorial_snapshot.completed_lessons, ["combat_intents"])
+	assert_eq((result["snapshot"] as SessionSnapshot).companion_snapshot.directive, "safeguard")
+	assert_eq(int((result["snapshot"] as SessionSnapshot).companion_snapshot.bond), 2)
 
 
 func test_corrupted_primary_save_falls_back_to_last_backup() -> void:
@@ -295,6 +297,10 @@ func _sample_snapshot() -> SessionSnapshot:
 	var guild_state := TutorialGuildState.new()
 	guild_state.complete_lesson(&"combat_intents")
 	snapshot.tutorial_snapshot = guild_state.to_snapshot()
+	var companion := CompanionState.new()
+	companion.set_directive(&"safeguard")
+	CompanionRules.reaction_once(companion, &"cache_recovered")
+	snapshot.companion_snapshot = companion.to_snapshot()
 	return snapshot
 
 

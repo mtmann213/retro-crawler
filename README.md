@@ -1,6 +1,8 @@
 # Retro Crawler
 
-Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending run now includes character creation with three classes and suit accents, an optional Tutorial Guild, a physically walkable Service Level, an original animated top-down crawler, visible animated Scrap Hound and Sentry Drone contacts, seeded run variation, combat impact feedback, three adaptive retro music modes, sound cues, versioned save recovery, persistent settings, and full keyboard/controller navigation.
+Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending run now includes character creation with three classes and suit accents, the persistent survey companion Mox, an optional Tutorial Guild, a physically walkable Service Level, an original animated top-down crawler, visible animated Scrap Hound and Sentry Drone contacts, seeded run variation, combat impact feedback, three adaptive retro music modes, sound cues, versioned save recovery, persistent settings, and full keyboard/controller navigation.
+
+Mox is a visible exploration companion with an authored personality, deterministic contextual reactions, bounded relationship growth, and saved memories. The companion foundation is fully offline; optional model-enhanced incidental conversation is reserved for a later milestone.
 
 Visual production follows the original 16-bit-inspired technical and style contract in [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md).
 
