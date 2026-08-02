@@ -47,6 +47,7 @@ func _ready() -> void:
 	map_area.interaction_requested.connect(_world_interact)
 	map_area.inventory_requested.connect(_open_inventory)
 	map_area.interaction_proximity_changed.connect(_sync_interaction_proximity)
+	map_area.encounter_requested.connect(_world_encounter)
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_render_room()
 
@@ -61,7 +62,18 @@ func _render_room() -> void:
 		visited[room_id] = floor_state.get_room_state(room_id).visited
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
-	map_area.present(room.content_id, visited, room.interaction_label, not room_state.interaction_completed)
+	var encounter_pending := (
+		not room.encounter_id.is_empty()
+		and not room_state.encounter_completed
+		and room.content_id != &"room_warden_chamber"
+	)
+	map_area.present(
+		room.content_id,
+		visited,
+		room.interaction_label,
+		not room_state.interaction_completed,
+		encounter_pending,
+	)
 	_sync_interaction_proximity(map_area.can_interact_here(), room.interaction_label)
 	emergency_button.visible = (
 		room.content_id == &"room_warden_chamber"
@@ -96,10 +108,9 @@ func _move_to_room(room_id: StringName) -> void:
 		_trigger_narrative(&"floor_started")
 	_trigger_narrative(room_id)
 	_render_room()
-	var state := floor_state.get_room_state(room_id)
 	var room := FLOOR.get_room(room_id)
-	if not room.encounter_id.is_empty() and not state.encounter_completed and room_id != &"room_warden_chamber":
-		_start_combat(room.encounter_id)
+	if not room.encounter_id.is_empty() and room_id != &"room_warden_chamber":
+		_append_log("HOSTILES DETECTED // approach contact to engage // routes locked")
 	_request_save()
 
 
@@ -133,6 +144,17 @@ func _world_interact() -> void:
 	var room := FLOOR.get_room(floor_state.current_room_id)
 	if not room.interaction_id.is_empty() and map_area.can_interact_here():
 		_interact(room.interaction_id)
+
+
+func _world_encounter(room_id: StringName) -> void:
+	if room_id != floor_state.current_room_id or active_combat != null:
+		return
+	var room := FLOOR.get_room(room_id)
+	var room_state := floor_state.get_room_state(room_id)
+	if room == null or room.encounter_id.is_empty() or room_state.encounter_completed:
+		return
+	_start_combat(room.encounter_id)
+	_request_save()
 
 
 func _sync_interaction_proximity(in_range: bool, _prompt: String) -> void:

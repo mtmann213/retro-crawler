@@ -5,10 +5,12 @@ signal room_entered(room_id: StringName)
 signal interaction_requested
 signal inventory_requested
 signal interaction_proximity_changed(in_range: bool, prompt: String)
+signal encounter_requested(room_id: StringName)
 
 const PLAYER_TEXTURE := preload("res://assets/characters/crawler_topdown.png")
 const MOVE_SPEED := 82.0
 const INTERACTION_RADIUS := 24.0
+const ENCOUNTER_RADIUS := 24.0
 const ROOM_RECTS := {
 	&"room_intake_shelter": Rect2(18, 78, 104, 48),
 	&"room_broken_junction": Rect2(150, 78, 112, 48),
@@ -34,15 +36,29 @@ const INTERACTION_POINTS := {
 	&"room_maintenance_cache": Vector2(236, 34),
 	&"room_warden_chamber": Vector2(566, 102),
 }
+const ENCOUNTER_POINTS := {
+	&"room_broken_junction": Vector2(232, 102),
+	&"room_processing_hall": Vector2(382, 102),
+}
+const ENCOUNTER_COUNTS := {
+	&"room_broken_junction": 2,
+	&"room_processing_hall": 2,
+}
+const LOCKED_EXIT_RECTS := {
+	&"room_broken_junction": [Rect2(197, 76, 18, 6), Rect2(258, 93, 6, 18)],
+	&"room_processing_hall": [Rect2(412, 93, 6, 18)],
+}
 
 var player_position := Vector2(70, 102)
 var current_room_id: StringName = &"room_intake_shelter"
 var visited_room_ids: Dictionary[StringName, bool] = {}
 var interaction_text := ""
 var interaction_available := false
+var encounter_available := false
 var movement_enabled := true
 var player_sprite := Sprite2D.new()
 var _interaction_in_range := false
+var _encounter_triggered := false
 
 
 func _ready() -> void:
@@ -78,6 +94,7 @@ func _process(delta: float) -> void:
 	player_sprite.position = player_position
 	_check_room_entry()
 	_refresh_interaction_proximity()
+	_check_encounter_proximity()
 	queue_redraw()
 
 
@@ -108,10 +125,13 @@ func present(
 	visited: Dictionary[StringName, bool],
 	interaction_label: String,
 	can_interact: bool,
+	has_encounter: bool,
 ) -> void:
 	visited_room_ids = visited.duplicate()
 	interaction_text = interaction_label
 	interaction_available = can_interact
+	encounter_available = has_encounter
+	_encounter_triggered = false
 	if current_room_id != room_id:
 		sync_to_room(room_id)
 	_refresh_interaction_proximity()
@@ -120,6 +140,7 @@ func present(
 
 func sync_to_room(room_id: StringName, force_warp: bool = true) -> void:
 	current_room_id = room_id
+	_encounter_triggered = false
 	if force_warp or not (ROOM_RECTS[room_id] as Rect2).has_point(player_position):
 		player_position = (ROOM_RECTS[room_id] as Rect2).get_center()
 		player_sprite.position = player_position
@@ -145,12 +166,33 @@ func interaction_point_for_room(room_id: StringName) -> Vector2:
 	return INTERACTION_POINTS.get(room_id, Vector2.INF)
 
 
+func encounter_point_for_room(room_id: StringName) -> Vector2:
+	return ENCOUNTER_POINTS.get(room_id, Vector2.INF)
+
+
+func can_trigger_encounter() -> bool:
+	if not encounter_available or not ENCOUNTER_POINTS.has(current_room_id):
+		return false
+	return player_position.distance_to(ENCOUNTER_POINTS[current_room_id]) <= ENCOUNTER_RADIUS
+
+
+func is_progression_locked(room_id: StringName) -> bool:
+	return encounter_available and current_room_id == room_id and LOCKED_EXIT_RECTS.has(room_id)
+
+
 func _refresh_interaction_proximity() -> void:
 	var in_range := can_interact_here()
 	if in_range == _interaction_in_range:
 		return
 	_interaction_in_range = in_range
 	interaction_proximity_changed.emit(in_range, interaction_text)
+
+
+func _check_encounter_proximity() -> void:
+	if _encounter_triggered or not can_trigger_encounter():
+		return
+	_encounter_triggered = true
+	encounter_requested.emit(current_room_id)
 
 
 func _check_room_entry() -> void:
@@ -163,13 +205,23 @@ func _check_room_entry() -> void:
 
 
 func _is_walkable(position: Vector2) -> bool:
+	var inside_floor := false
 	for rect: Rect2 in ROOM_RECTS.values():
 		if rect.grow(-3.0).has_point(position):
-			return true
-	for corridor: Rect2 in CORRIDORS:
-		if corridor.has_point(position):
-			return true
-	return false
+			inside_floor = true
+			break
+	if not inside_floor:
+		for corridor: Rect2 in CORRIDORS:
+			if corridor.has_point(position):
+				inside_floor = true
+				break
+	if not inside_floor:
+		return false
+	if is_progression_locked(current_room_id):
+		for barrier: Rect2 in LOCKED_EXIT_RECTS[current_room_id]:
+			if barrier.has_point(position):
+				return false
+	return true
 
 
 func _draw() -> void:
@@ -186,6 +238,9 @@ func _draw() -> void:
 		draw_rect(rect, Color("7dd3fc") if room_id == current_room_id else Color("35566d"), false, 2.0 if room_id == current_room_id else 1.0)
 		draw_string(ThemeDB.fallback_font, rect.position + Vector2(6, 13), ROOM_NAMES[room_id], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color("a9c5d8") if visited else Color("536674"))
 		_draw_room_details(room_id, rect, visited)
+	if encounter_available and ENCOUNTER_POINTS.has(current_room_id):
+		_draw_encounter_marker(current_room_id)
+		_draw_locked_exits(current_room_id)
 	if interaction_available and INTERACTION_POINTS.has(current_room_id):
 		var marker: Vector2 = INTERACTION_POINTS[current_room_id]
 		var marker_color := Color("86efac") if can_interact_here() else Color("fcd34d")
@@ -195,6 +250,32 @@ func _draw() -> void:
 		var prompt := ("E / A // " if can_interact_here() else "MOVE CLOSER // ") + interaction_text
 		draw_string(ThemeDB.fallback_font, Vector2(8, size.y - 5), prompt, HORIZONTAL_ALIGNMENT_CENTER, size.x - 16, 7, marker_color)
 	draw_rect(Rect2(Vector2.ZERO, size), Color("31536b"), false, 1.0)
+
+
+func _draw_encounter_marker(room_id: StringName) -> void:
+	var center: Vector2 = ENCOUNTER_POINTS[room_id]
+	draw_arc(center, ENCOUNTER_RADIUS, 0, TAU, 32, Color("fb7185", 0.28), 1.0)
+	var count: int = ENCOUNTER_COUNTS[room_id]
+	for index: int in count:
+		var offset := Vector2((index - (count - 1) * 0.5) * 12.0, 0)
+		var hostile := center + offset
+		draw_circle(hostile, 5.0, Color("7f1d2d"), true)
+		draw_rect(Rect2(hostile + Vector2(-4, 4), Vector2(8, 6)), Color("fb7185"), true)
+		draw_circle(hostile + Vector2(0, -1), 1.5, Color("fef2f2"), true)
+	draw_string(ThemeDB.fallback_font, Vector2(8, size.y - 5), "HOSTILES // APPROACH TO ENGAGE // PROGRESSION ROUTES LOCKED", HORIZONTAL_ALIGNMENT_CENTER, size.x - 16, 7, Color("fb7185"))
+
+
+func _draw_locked_exits(room_id: StringName) -> void:
+	if not LOCKED_EXIT_RECTS.has(room_id):
+		return
+	for barrier: Rect2 in LOCKED_EXIT_RECTS[room_id]:
+		draw_rect(barrier, Color("fb7185", 0.38), true)
+		if barrier.size.x > barrier.size.y:
+			for x: float in range(int(barrier.position.x) + 2, int(barrier.end.x), 4):
+				draw_line(Vector2(x, barrier.position.y), Vector2(x, barrier.end.y), Color("fecdd3"), 1.0)
+		else:
+			for y: float in range(int(barrier.position.y) + 2, int(barrier.end.y), 4):
+				draw_line(Vector2(barrier.position.x, y), Vector2(barrier.end.x, y), Color("fecdd3"), 1.0)
 
 
 func _draw_route_markings(corridor: Rect2) -> void:

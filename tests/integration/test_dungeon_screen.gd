@@ -30,7 +30,7 @@ func test_opening_inventory_costs_no_time() -> void:
 	assert_eq(get_viewport().gui_get_focus_owner(), screen.map_area)
 
 
-func test_entering_a_connected_room_changes_rooms_without_freeing_signal_sender() -> void:
+func test_entering_a_hostile_room_reveals_contact_before_combat() -> void:
 	var screen := await _spawn_screen()
 	screen.map_area.player_position = Vector2(160, 100)
 	screen.map_area.player_sprite.position = screen.map_area.player_position
@@ -38,6 +38,11 @@ func test_entering_a_connected_room_changes_rooms_without_freeing_signal_sender(
 	await get_tree().process_frame
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
 	assert_eq(screen.floor_state.remaining_seconds, 705)
+	assert_null(screen.active_combat)
+	assert_true(screen.map_area.encounter_available)
+	assert_true(screen.map_area.is_progression_locked(&"room_broken_junction"))
+	assert_false(screen.map_area._is_walkable(Vector2(260, 100)))
+	_approach_encounter(screen, &"room_broken_junction")
 	assert_not_null(screen.active_combat)
 
 
@@ -119,6 +124,7 @@ func test_optional_cache_detour_and_search_spend_advertised_time() -> void:
 func test_combat_rewards_return_to_the_room_that_triggered_them() -> void:
 	var screen := await _spawn_screen()
 	screen._move_to_room(&"room_broken_junction")
+	_approach_encounter(screen, &"room_broken_junction")
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
 	assert_false((screen.get_node("%ExplorationView") as Control).visible)
 	var combat := screen.active_combat
@@ -135,11 +141,15 @@ func test_combat_rewards_return_to_the_room_that_triggered_them() -> void:
 	assert_eq(screen.floor_state.current_room_id, &"room_broken_junction")
 	assert_true(screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_true((screen.get_node("%ExplorationView") as Control).visible)
+	assert_false(screen.map_area.encounter_available)
+	assert_false(screen.map_area.is_progression_locked(&"room_broken_junction"))
+	assert_true(screen.map_area._is_walkable(Vector2(260, 100)))
 
 
 func test_player_health_and_resources_persist_into_the_next_room_encounter() -> void:
 	var screen := await _spawn_screen()
 	screen._move_to_room(&"room_broken_junction")
+	_approach_encounter(screen, &"room_broken_junction")
 	var first_combat := screen.active_combat
 	first_combat.simulation.get_combatant(2).current_hp = 1
 	first_combat.simulation.get_combatant(3).apply_damage(first_combat.simulation.get_combatant(3).max_hp)
@@ -154,6 +164,7 @@ func test_player_health_and_resources_persist_into_the_next_room_encounter() -> 
 	await get_tree().process_frame
 
 	screen._move_to_room(&"room_processing_hall")
+	_approach_encounter(screen, &"room_processing_hall")
 	var next_player := screen.active_combat.simulation.get_combatant(1)
 	assert_eq(next_player.current_hp, 47)
 	assert_eq(next_player.get_resource(&"stamina"), 7)
@@ -183,6 +194,7 @@ func test_clock_thresholds_apply_real_idempotent_combat_modifiers() -> void:
 func test_deadline_reached_during_combat_aborts_to_extraction_state() -> void:
 	var screen := await _spawn_screen()
 	screen._move_to_room(&"room_broken_junction")
+	_approach_encounter(screen, &"room_broken_junction")
 	screen.floor_state.remaining_seconds = 3
 	var combat := screen.active_combat
 	(combat.get_node("%StrikeButton") as Button).pressed.emit()
@@ -270,3 +282,8 @@ func _spawn_screen() -> DungeonScreen:
 	add_child_autofree(screen)
 	await get_tree().process_frame
 	return screen
+
+
+func _approach_encounter(screen: DungeonScreen, room_id: StringName) -> void:
+	screen.map_area.restore_position(screen.map_area.encounter_point_for_room(room_id), room_id)
+	screen.map_area._check_encounter_proximity()

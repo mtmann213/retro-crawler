@@ -18,7 +18,7 @@ Record: player name, platform, controller or keyboard, total minutes, ending rea
 
 1. What were you trying to accomplish?
 2. When did the clock feel important?
-3. Which combat choice was hardest to understand?
+3. Did visible hostiles and locked routes make it clear when and why combat would begin?
 4. Did the room props, route markings, and point-of-interest prompts make it clear where to walk and interact?
 5. Was any text, sound, or animation distracting or hard to read?
 6. Would you choose the cache detour again? Why?

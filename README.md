@@ -7,7 +7,7 @@ Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending 
 1. Open this folder in Godot 4.7.1.
 2. Press **F5** to run the complete project. F6 only runs the scene currently open in the editor.
 3. Choose **New Game** (or **Continue** after creating a save), then walk out of the Intake Shelter to start the 12-minute dungeon clock.
-4. Traverse the Broken Junction, optionally search the Maintenance Cache, clear the Processing Hall, and reach the Warden Chamber.
+4. Traverse the Broken Junction, approach visible hostiles to engage them, optionally search the Maintenance Cache, clear the Processing Hall to unlock the final route, and reach the Warden Chamber.
 5. During encounters, choose among **Quick Strike**, **Heavy Swing**, **Brace**, **Hamstring**, and **Field Patch** while watching each action's dungeon-time cost.
 6. Claim deterministic rewards, inspect item rarity, use consumables, equip gear, and return to the room that triggered combat.
 7. In the Warden Chamber, engage the boss and adapt as it shifts through Assessment, Containment, and Purge phases—or use emergency extraction to end the run early.
@@ -46,6 +46,6 @@ Builds are written under `builds/`. Outside-player release gates and the observa
 
 ## Release-candidate boundaries
 
-Included: all prior combat, rewards, exploration, boss, and narrative systems; a walkable five-room Service Level with constrained corridors, physical room-entry triggers, proximity-based points of interest, contextual prompts, distinct room machinery and hazards, an original crawler sprite, and saved world position; transitions and combat feedback; adaptive procedural music and sound cues; title/new/continue flows; full session snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; export presets; GUT tests; and headless coverage.
+Included: all prior combat, rewards, exploration, boss, and narrative systems; a walkable five-room Service Level with constrained corridors, physical room-entry triggers, visible hostile contacts, proximity-triggered encounters, clear-to-unlock progression barriers, proximity-based points of interest, contextual prompts, distinct room machinery and hazards, an original crawler sprite, and saved world position; transitions and combat feedback; adaptive procedural music and sound cues; title/new/continue flows; full session snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; export presets; GUT tests; and headless coverage.
 
 Deferred beyond this vertical slice: shops, crafting, durability, random affixes, set bonuses, additional floors, and a free-walking overworld. Final release still requires recorded outside playtests and locally installed export templates.
