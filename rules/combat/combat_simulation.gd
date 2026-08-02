@@ -193,6 +193,12 @@ func create_enemy_command() -> ActionCommand:
 		return null
 
 	var command := EnemyAI.command_from_intent(actor, state, _skills)
+	if (
+		command != null
+		and actor.definition_id == BossPhaseRules.WARDEN_ID
+		and not BossPhaseRules.skill_is_available(actor, command.skill_id)
+	):
+		command = null
 	if command != null:
 		return command
 	return _plan_enemy_intent(actor)
@@ -282,7 +288,10 @@ func _plan_all_enemy_intents() -> void:
 
 func _plan_enemy_intent(actor: CombatantState) -> ActionCommand:
 	var definition := _enemy_definitions.get(actor.definition_id) as EnemyDefinition
-	return EnemyAI.plan_intent(actor, state, _skills, definition)
+	var pattern: Array[StringName] = []
+	if actor.definition_id == BossPhaseRules.WARDEN_ID:
+		pattern = BossPhaseRules.skill_pattern_for(BossPhaseRules.phase_for(actor))
+	return EnemyAI.plan_intent(actor, state, _skills, definition, pattern)
 
 
 func _check_combat_end(events: Array[CombatEvent]) -> void:

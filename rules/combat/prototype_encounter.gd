@@ -5,6 +5,7 @@ const DEFAULT_SEED := 731_2026
 const DUEL_ENCOUNTER_ID := &"encounter_duel"
 const TWO_ENEMY_ENCOUNTER_ID := &"encounter_two_enemy"
 const BRUTE_ENCOUNTER_ID := &"encounter_brute"
+const WARDEN_ENCOUNTER_ID := &"encounter_warden"
 
 
 static func create_simulation(
@@ -146,9 +147,19 @@ static func _create_skills() -> Array[SkillDefinition]:
 	)
 	slam.dungeon_time_cost = 8
 
+	var warden_probe := _skill(&"warden_probe", "Diagnostic Probe", "A measured test strike.", SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 85, [_damage(5, 0.8)])
+	var warden_scan := _skill(&"warden_scan", "Threat Scan", "The Warden braces while calibrating.", SkillDefinition.ActionKind.BRACE, SkillDefinition.TargetRule.SELF, 75, [])
+	var warden_barrier := _skill(&"warden_barrier", "Containment Barrier", "A containment shield locks into place.", SkillDefinition.ActionKind.BRACE, SkillDefinition.TargetRule.SELF, 80, [])
+	var warden_suppress := _skill(&"warden_suppress", "Suppressive Arc", "An electrical arc slows its target.", SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 105, [_damage(8, 1.0), _apply_status(&"slowed")])
+	var warden_purge := _skill(&"warden_purge", "Purge Beam", "A lethal beam with a long, visible recovery.", SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 150, [_damage(18, 1.35)])
+	var warden_lockdown := _skill(&"warden_lockdown", "Terminal Lockdown", "A crushing strike exposes every weak point.", SkillDefinition.ActionKind.STRIKE, SkillDefinition.TargetRule.SINGLE_ENEMY, 125, [_damage(12, 1.1), _apply_status(&"exposed")])
+	for warden_skill: SkillDefinition in [warden_probe, warden_scan, warden_barrier, warden_suppress, warden_purge, warden_lockdown]:
+		warden_skill.dungeon_time_cost = 8
+
 	var definitions: Array[SkillDefinition] = [
 		quick_strike, heavy_swing, brace, hamstring, field_patch,
 		scrap_bite, circle, charged_shot, reposition, crush, slam,
+		warden_probe, warden_scan, warden_barrier, warden_suppress, warden_purge, warden_lockdown,
 	]
 	return definitions
 
@@ -190,7 +201,7 @@ static func _create_enemy_definitions() -> Array[EnemyDefinition]:
 	brute.loot_table_id = &"loot_combat_victory"
 	brute.experience_reward = 90
 
-	var definitions: Array[EnemyDefinition] = [hound, drone, brute]
+	var definitions: Array[EnemyDefinition] = [hound, drone, brute, ContentRegistry.get_warden_enemy()]
 	return definitions
 
 
@@ -204,6 +215,8 @@ static func _get_encounter(encounter_id: StringName) -> EncounterDefinition:
 			encounter.enemy_definition_ids = [&"enemy_scrap_hound", &"enemy_sentry_drone"]
 		BRUTE_ENCOUNTER_ID:
 			encounter.enemy_definition_ids = [&"enemy_scrap_brute"]
+		WARDEN_ENCOUNTER_ID:
+			return ContentRegistry.get_warden_encounter()
 		_:
 			return null
 	return encounter

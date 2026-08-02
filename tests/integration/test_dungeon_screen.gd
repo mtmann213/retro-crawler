@@ -153,8 +153,29 @@ func test_player_can_reach_warden_room_and_extract() -> void:
 	screen._move_to_room(&"room_warden_chamber")
 	assert_true(screen.floor_state.boss_room_reached)
 	assert_eq(screen.floor_state.current_room_id, &"room_warden_chamber")
-	(screen.get_node("%InteractionButton") as Button).pressed.emit()
+	(screen.get_node("%EmergencyButton") as Button).pressed.emit()
 	assert_true(screen.floor_state.extracted)
+	assert_true((screen.get_node("%EndPanel") as PanelContainer).visible)
+
+
+func test_player_can_defeat_warden_and_reach_victory_ending() -> void:
+	var screen := await _spawn_screen()
+	screen.floor_state.get_room_state(&"room_broken_junction").encounter_completed = true
+	screen.floor_state.get_room_state(&"room_processing_hall").encounter_completed = true
+	screen._move_to_room(&"room_broken_junction")
+	screen._move_to_room(&"room_processing_hall")
+	screen._move_to_room(&"room_warden_chamber")
+	(screen.get_node("%InteractionButton") as Button).pressed.emit()
+	var combat := screen.active_combat
+	assert_eq(combat.encounter_id, PrototypeEncounter.WARDEN_ENCOUNTER_ID)
+	combat.simulation.get_combatant(2).current_hp = 1
+	(combat.get_node("%StrikeButton") as Button).pressed.emit()
+	(combat.get_node("%RewardsButton") as Button).pressed.emit()
+	var rewards := combat.get_node("%InventoryScreen") as InventoryScreen
+	(rewards.get_node("%ContinueButton") as Button).pressed.emit()
+	await get_tree().process_frame
+	assert_true(screen.floor_state.boss_defeated)
+	assert_true(screen.floor_state.victory_ending)
 	assert_true((screen.get_node("%EndPanel") as PanelContainer).visible)
 
 

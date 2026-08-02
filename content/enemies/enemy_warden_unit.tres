@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/enemy_definition.gd" id="1_enemy"]
+
+[resource]
+script = ExtResource("1_enemy")
+content_id = &"enemy_warden_unit"
+display_name = "Warden Unit"
+description = "An autonomous containment machine with three escalating protocols."
+level = 5
+max_hp = 150
+power = 11
+defense = 7
+speed = 9
+skill_ids = Array[StringName]([&"warden_probe", &"warden_scan", &"warden_barrier", &"warden_suppress", &"warden_purge", &"warden_lockdown"])
+ai_pattern = Array[StringName]([&"warden_probe", &"warden_scan"])
+loot_table_id = &"loot_combat_victory"
+experience_reward = 250

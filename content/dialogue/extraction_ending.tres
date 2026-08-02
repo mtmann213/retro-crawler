@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DialogueEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/dialogue_event_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+content_id = &"ending_emergency_extraction"
+trigger_id = &"extraction_ending"
+speaker = "CRAWLER"
+text = "The lift seals before the level dies. The Warden remains below, waiting."
+presentation = 3
+required_flags = Array[StringName]([&"extracted"])

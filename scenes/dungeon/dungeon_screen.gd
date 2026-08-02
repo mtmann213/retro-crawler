@@ -13,24 +13,32 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var exit_list: HBoxContainer = %ExitList
 @onready var interaction_button: DungeonInteractable = %InteractionButton
 @onready var inventory_button: Button = %InventoryButton
+@onready var emergency_button: Button = %EmergencyButton
 @onready var event_log: RichTextLabel = %EventLog
 @onready var inventory_screen: InventoryScreen = %InventoryScreen
 @onready var end_panel: PanelContainer = %EndPanel
 @onready var end_label: Label = %EndLabel
 @onready var extract_button: Button = %ExtractButton
+@onready var announcement_panel: AnnouncementPanel = %AnnouncementPanel
 
 var floor_state := FloorState.new(FLOOR)
 var reward_session := RewardSession.new()
 var player_run_state: Dictionary = {}
 var active_combat: CombatScreen
+var dialogue_state := DialogueState.new()
+var dialogue_events: Array[DialogueEventDefinition] = []
+var narrative_flags: Dictionary[StringName, bool] = {}
 
 
 func _ready() -> void:
 	assert(RoomTransitionRules.validate_graph(FLOOR).is_empty())
+	assert(ContentRegistry.validate_all().is_empty())
+	dialogue_events = ContentRegistry.get_dialogue_events()
 	interaction_button.interaction_requested.connect(_interact)
 	inventory_button.pressed.connect(_open_inventory)
 	inventory_screen.item_used.connect(_spend_inventory_time)
 	extract_button.pressed.connect(_extract)
+	emergency_button.pressed.connect(_extract)
 	_build_map()
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
 	_render_room()
@@ -55,6 +63,11 @@ func _render_room() -> void:
 	room_description.text = room.description
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
+	emergency_button.visible = (
+		room.content_id == &"room_warden_chamber"
+		and not floor_state.boss_defeated
+		and not floor_state.extracted
+	)
 	for child: Node in exit_list.get_children():
 		child.free()
 	for exit_id: StringName in room.connected_room_ids:
@@ -71,8 +84,11 @@ func _render_room() -> void:
 		map_button.text = ("> " if map_room_id == floor_state.current_room_id else "") + FLOOR.get_room(map_room_id).display_name.to_upper()
 		map_button.disabled = not room.connected_room_ids.has(map_room_id) or floor_state.floor_failed or floor_state.extracted
 		map_button.modulate = Color.WHITE if visited or map_room_id == floor_state.current_room_id else Color(0.45, 0.48, 0.52)
-	end_panel.visible = floor_state.floor_failed or floor_state.extracted
-	if floor_state.extracted:
+	end_panel.visible = floor_state.floor_failed or floor_state.extracted or floor_state.victory_ending
+	if floor_state.victory_ending:
+		end_label.text = "RUN COMPLETE // WARDEN DEFEATED\nThe Service Level is safely shut down."
+		extract_button.visible = false
+	elif floor_state.extracted:
 		end_label.text = "RUN ENDED // EMERGENCY EXTRACTION COMPLETE\nRooms reached: %d/5  //  Time remaining: %d sec" % [_visited_count(), floor_state.remaining_seconds]
 		extract_button.visible = false
 	elif floor_state.floor_failed:
@@ -88,10 +104,13 @@ func _move_to_room(room_id: StringName) -> void:
 		_render_room()
 		return
 	_append_log("ENTERED // %s" % FLOOR.get_room(room_id).display_name.to_upper())
+	if before == FLOOR.starting_room_id:
+		_trigger_narrative(&"floor_started")
+	_trigger_narrative(room_id)
 	_render_room()
 	var state := floor_state.get_room_state(room_id)
 	var room := FLOOR.get_room(room_id)
-	if not room.encounter_id.is_empty() and not state.encounter_completed:
+	if not room.encounter_id.is_empty() and not state.encounter_completed and room_id != &"room_warden_chamber":
 		_start_combat(room.encounter_id)
 
 
@@ -113,8 +132,10 @@ func _interact(interaction_id: StringName) -> void:
 				var patch := reward_session.get_item(&"item_field_patch")
 				var added := InventoryRules.add_item(reward_session.inventory, patch, 2)
 				_append_log("CACHE RECOVERED // Field Patch x%d" % added)
-		&"emergency_extract":
-			_extract()
+				narrative_flags[&"took_detour"] = true
+				_trigger_narrative(&"cache_found")
+		&"engage_warden":
+			_start_combat(PrototypeEncounter.WARDEN_ENCOUNTER_ID)
 	_render_room()
 
 
@@ -146,6 +167,7 @@ func _start_combat(encounter_id: StringName) -> void:
 	active_combat.dungeon_thresholds = floor_state.triggered_thresholds.duplicate()
 	active_combat.dungeon_time_spent.connect(_spend_combat_time)
 	active_combat.dungeon_return_requested.connect(_return_from_combat)
+	active_combat.boss_phase_changed.connect(_trigger_narrative)
 	combat_host.add_child(active_combat)
 	active_combat.set_dungeon_clock_remaining(floor_state.remaining_seconds)
 	_append_log("ENCOUNTER STARTED // returning to %s after rewards" % FLOOR.get_room(floor_state.current_room_id).display_name)
@@ -172,12 +194,18 @@ func _abort_combat_for_deadline() -> void:
 
 
 func _return_from_combat() -> void:
+	var defeated_warden := active_combat.encounter_id == PrototypeEncounter.WARDEN_ENCOUNTER_ID
 	floor_state.get_room_state(floor_state.current_room_id).encounter_completed = true
 	player_run_state = active_combat.get_player_run_snapshot()
 	active_combat.queue_free()
 	active_combat = null
 	exploration_view.visible = true
 	_append_log("ENCOUNTER CLEARED // returned to %s" % FLOOR.get_room(floor_state.current_room_id).display_name)
+	if defeated_warden:
+		floor_state.boss_defeated = true
+		floor_state.victory_ending = true
+		narrative_flags[&"boss_defeated"] = true
+		_trigger_narrative(&"victory_ending")
 	_render_room()
 
 
@@ -198,6 +226,9 @@ func _present_clock_events(events: Array[FloorClockEvent]) -> void:
 
 func _extract() -> void:
 	_present_clock_events(FloorClockRules.emergency_extract(floor_state))
+	floor_state.extraction_ending = true
+	narrative_flags[&"extracted"] = true
+	_trigger_narrative(&"extraction_ending")
 	_append_log("EXTRACTION // run state secured")
 	_render_room()
 
@@ -213,3 +244,11 @@ func _visited_count() -> int:
 		if room_state.visited:
 			count += 1
 	return count
+
+
+func _trigger_narrative(trigger_id: StringName) -> void:
+	var events := DialogueResolver.resolve(
+		dialogue_events, trigger_id, narrative_flags, dialogue_state,
+	)
+	if not events.is_empty():
+		announcement_panel.present_events(events)

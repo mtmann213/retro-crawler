@@ -11,6 +11,9 @@ var deadline_resolved: bool = false
 var floor_failed: bool = false
 var extracted: bool = false
 var boss_room_reached: bool = false
+var boss_defeated: bool = false
+var victory_ending: bool = false
+var extraction_ending: bool = false
 
 
 func _init(definition: FloorDefinition = null) -> void:
@@ -26,3 +29,34 @@ func _init(definition: FloorDefinition = null) -> void:
 
 func get_room_state(room_id: StringName) -> RoomState:
 	return rooms.get(room_id) as RoomState
+
+
+func to_snapshot() -> Dictionary:
+	return {
+		"floor_id": String(floor_id),
+		"current_room_id": String(current_room_id),
+		"remaining_seconds": remaining_seconds,
+		"clock_started": clock_started,
+		"deadline_resolved": deadline_resolved,
+		"floor_failed": floor_failed,
+		"extracted": extracted,
+		"boss_room_reached": boss_room_reached,
+		"boss_defeated": boss_defeated,
+		"victory_ending": victory_ending,
+		"extraction_ending": extraction_ending,
+	}
+
+
+static func from_snapshot(definition: FloorDefinition, snapshot: Dictionary) -> FloorState:
+	var state := FloorState.new(definition)
+	state.current_room_id = StringName(snapshot.get("current_room_id", state.current_room_id))
+	state.remaining_seconds = int(snapshot.get("remaining_seconds", state.remaining_seconds))
+	state.clock_started = bool(snapshot.get("clock_started", false))
+	state.deadline_resolved = bool(snapshot.get("deadline_resolved", false))
+	state.floor_failed = bool(snapshot.get("floor_failed", false))
+	state.extracted = bool(snapshot.get("extracted", false))
+	state.boss_room_reached = bool(snapshot.get("boss_room_reached", false))
+	state.boss_defeated = bool(snapshot.get("boss_defeated", false))
+	state.victory_ending = bool(snapshot.get("victory_ending", false))
+	state.extraction_ending = bool(snapshot.get("extraction_ending", false))
+	return state

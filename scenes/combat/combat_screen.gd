@@ -3,6 +3,7 @@ extends Control
 
 signal dungeon_time_spent(seconds: int, description: String)
 signal dungeon_return_requested
+signal boss_phase_changed(trigger_id: StringName)
 
 const PLAYER_ID := 1
 const FIRST_ENEMY_ID := 2
@@ -25,9 +26,11 @@ const SECOND_ENEMY_ID := 3
 @onready var enemy_two_hp_bar: ProgressBar = %EnemyTwoHPBar
 @onready var enemy_two_guard_label: Label = %EnemyTwoGuard
 @onready var enemy_two_statuses: Label = %EnemyTwoStatuses
+@onready var enemy_two_card: PanelContainer = %EnemyTwoCard
 @onready var intent_label: Label = %IntentLabel
 @onready var timeline_label: Label = %TimelineLabel
 @onready var dungeon_clock_label: Label = %DungeonClockLabel
+@onready var boss_phase_label: Label = %BossPhaseLabel
 @onready var status_label: Label = %StatusLabel
 @onready var target_label: Label = %TargetLabel
 @onready var strike_button: Button = %StrikeButton
@@ -53,6 +56,7 @@ var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
 var completed_encounters: int = 0
 var _applied_dungeon_thresholds: Dictionary[int, bool] = {}
+var _boss_presenter := BossPresenter.new()
 
 
 func _ready() -> void:
@@ -92,6 +96,7 @@ func _start_encounter() -> void:
 	encounter_faulted = false
 	rewards_granted = false
 	_applied_dungeon_thresholds.clear()
+	_boss_presenter = BossPresenter.new()
 	EquipmentRules.apply_equipped_items(
 		reward_session.inventory,
 		simulation.get_combatant(PLAYER_ID),
@@ -99,8 +104,9 @@ func _start_encounter() -> void:
 	)
 	apply_player_run_snapshot(simulation.get_combatant(PLAYER_ID), carried_player_state)
 	combat_log.clear_entries()
-	combat_log.append_entry("SYSTEM // two-hostile deterministic encounter loaded", Color("7dd3fc"))
-	combat_log.append_entry("Choose a target, read both telegraphs, then commit an action.")
+	combat_log.append_entry("SYSTEM // deterministic encounter loaded", Color("7dd3fc"))
+	combat_log.append_entry("Choose a target, read each telegraph, then commit an action.")
+	_update_boss_phase()
 	for threshold: int in [360, 180, 60]:
 		if dungeon_thresholds.get(threshold, false):
 			activate_dungeon_threshold(threshold)
@@ -230,6 +236,7 @@ func _submit_player_action(skill_id: StringName, targets_self: bool) -> void:
 	var target_id := PLAYER_ID if targets_self else selected_target_id
 	var player_events := simulation.resolve_action(ActionCommand.new(active_actor.instance_id, skill_id, target_id))
 	_present_events(player_events)
+	_update_boss_phase()
 	if _contains_event(player_events, CombatEvent.EventType.ACTION_REJECTED):
 		_refresh_view()
 		return
@@ -312,7 +319,10 @@ func _refresh_view() -> void:
 	var enemy_two := simulation.get_combatant(SECOND_ENEMY_ID)
 	_update_player(player)
 	_update_enemy(enemy_one, enemy_name_label, enemy_hp_label, enemy_hp_bar, enemy_guard_label, enemy_statuses)
-	_update_enemy(enemy_two, enemy_two_name_label, enemy_two_hp_label, enemy_two_hp_bar, enemy_two_guard_label, enemy_two_statuses)
+	enemy_two_card.visible = enemy_two != null
+	target_two_button.visible = enemy_two != null
+	if enemy_two != null:
+		_update_enemy(enemy_two, enemy_two_name_label, enemy_two_hp_label, enemy_two_hp_bar, enemy_two_guard_label, enemy_two_statuses)
 
 	var active_actor := simulation.get_next_actor()
 	if encounter_faulted:
@@ -327,11 +337,12 @@ func _refresh_view() -> void:
 	_update_intents(player)
 	_update_timeline()
 	var selected := simulation.get_combatant(selected_target_id)
-	target_label.text = "TARGET // %s" % selected.display_name.to_upper()
+	target_label.text = "TARGET // %s" % selected.display_name.to_upper() if selected != null else "TARGET // NONE"
 	target_one_button.text = ("> " if selected_target_id == FIRST_ENEMY_ID else "") + enemy_one.display_name.to_upper()
-	target_two_button.text = ("> " if selected_target_id == SECOND_ENEMY_ID else "") + enemy_two.display_name.to_upper()
+	if enemy_two != null:
+		target_two_button.text = ("> " if selected_target_id == SECOND_ENEMY_ID else "") + enemy_two.display_name.to_upper()
 	target_one_button.disabled = enemy_one.is_defeated
-	target_two_button.disabled = enemy_two.is_defeated
+	target_two_button.disabled = enemy_two == null or enemy_two.is_defeated
 
 	var player_can_act := not simulation.combat_finished_flag and not encounter_faulted and active_actor != null and active_actor.team == CombatantState.Team.PLAYER
 	_update_skill_button(strike_button, &"quick_strike", player_can_act)
@@ -454,3 +465,18 @@ func _contains_event(events: Array[CombatEvent], event_type: CombatEvent.EventTy
 		if event.event_type == event_type:
 			return true
 	return false
+
+
+func _update_boss_phase() -> void:
+	if simulation == null:
+		return
+	var boss := simulation.get_first_combatant_on_team(CombatantState.Team.ENEMY)
+	if boss == null or boss.definition_id != BossPhaseRules.WARDEN_ID:
+		boss_phase_label.visible = false
+		return
+	var trigger_id := _boss_presenter.update(boss)
+	boss_phase_label.visible = true
+	boss_phase_label.text = _boss_presenter.label_text()
+	if not trigger_id.is_empty():
+		combat_log.append_entry(boss_phase_label.text, Color("fb923c"))
+		boss_phase_changed.emit(trigger_id)

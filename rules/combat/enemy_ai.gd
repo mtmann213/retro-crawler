@@ -7,11 +7,14 @@ static func plan_intent(
 	state: CombatState,
 	skills: Dictionary[StringName, SkillDefinition],
 	enemy_definition: EnemyDefinition,
+	pattern_override: Array[StringName] = [],
 ) -> ActionCommand:
 	if actor == null or not actor.can_act() or enemy_definition == null:
 		return null
 
-	var pattern := enemy_definition.ai_pattern
+	var pattern := pattern_override
+	if pattern.is_empty():
+		pattern = enemy_definition.ai_pattern
 	if pattern.is_empty():
 		pattern = enemy_definition.skill_ids
 	if pattern.is_empty():

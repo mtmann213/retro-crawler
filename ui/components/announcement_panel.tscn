@@ -1,0 +1,51 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://ui/components/announcement_panel.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.035, 0.043, 0.055, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.49, 0.827, 0.988, 1)
+content_margin_left = 18.0
+content_margin_top = 12.0
+content_margin_right = 18.0
+content_margin_bottom = 12.0
+
+[node name="AnnouncementPanel" type="PanelContainer"]
+custom_minimum_size = Vector2(460, 150)
+theme_override_styles/panel = SubResource("Panel")
+script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="KindLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.49, 0.827, 0.988, 1)
+theme_override_font_sizes/font_size = 10
+text = "ANNOUNCEMENT"
+
+[node name="SpeakerLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.996, 0.718, 0.718, 1)
+theme_override_font_sizes/font_size = 15
+text = "FACILITY"
+
+[node name="BodyLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "Announcement text"
+autowrap_mode = 2
+
+[node name="DismissButton" type="Button" parent="Layout"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ACKNOWLEDGE"
+

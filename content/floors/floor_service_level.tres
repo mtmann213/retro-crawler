@@ -49,11 +49,12 @@ map_position = Vector2(292, 66)
 script = ExtResource("2_room")
 content_id = &"room_warden_chamber"
 display_name = "Warden Chamber"
-description = "The sealed boss dais awaits its Milestone 5 occupant. Emergency extraction is online."
+description = "The Warden Unit guards the shutdown controls. Emergency extraction remains online."
 connected_room_ids = Array[StringName]([&"room_processing_hall"])
 mandatory = true
-interaction_id = &"emergency_extract"
-interaction_label = "EMERGENCY EXTRACTION  //  0 SEC"
+encounter_id = &"encounter_warden"
+interaction_id = &"engage_warden"
+interaction_label = "ENGAGE WARDEN UNIT  //  0 SEC"
 map_position = Vector2(430, 66)
 
 [resource]

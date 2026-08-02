@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/dungeon/dungeon_screen.gd" id="1_screen"]
 [ext_resource type="PackedScene" path="res://ui/components/floor_clock.tscn" id="2_clock"]
 [ext_resource type="Script" path="res://scenes/dungeon/interactable.gd" id="3_interactable"]
 [ext_resource type="Script" path="res://scenes/dungeon/player_controller.gd" id="4_controller"]
 [ext_resource type="PackedScene" path="res://scenes/menus/inventory_screen.tscn" id="5_inventory"]
+[ext_resource type="PackedScene" path="res://ui/components/announcement_panel.tscn" id="6_announcement"]
 
 [sub_resource type="StyleBoxFlat" id="Panel"]
 bg_color = Color(0.071, 0.084, 0.106, 1)
@@ -131,6 +132,14 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 9
 text = "INVENTORY  //  0 SEC"
 
+[node name="EmergencyButton" type="Button" parent="ExplorationView/Margin/Layout/Actions"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(180, 24)
+layout_mode = 2
+theme_override_font_sizes/font_size = 9
+text = "EMERGENCY EXTRACT  //  0 SEC"
+
 [node name="ExitList" type="HBoxContainer" parent="ExplorationView/Margin/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -193,6 +202,22 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
+
+[node name="AnnouncementPanel" parent="." instance=ExtResource("6_announcement")]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -75.0
+offset_right = 230.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
 
 [node name="InventoryScreen" parent="." instance=ExtResource("5_inventory")]
 unique_name_in_owner = true

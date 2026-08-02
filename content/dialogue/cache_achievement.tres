@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DialogueEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/dialogue_event_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+content_id = &"achievement_salvage_instinct"
+trigger_id = &"cache_found"
+speaker = "ACHIEVEMENT"
+text = "SALVAGE INSTINCT // Search the optional maintenance cache."
+presentation = 2
+required_flags = Array[StringName]([&"took_detour"])
+

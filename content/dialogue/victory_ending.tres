@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DialogueEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/dialogue_event_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+content_id = &"ending_warden_defeated"
+trigger_id = &"victory_ending"
+speaker = "FACILITY"
+text = "Warden link severed. Manual shutdown accepted. The Service Level goes quiet."
+presentation = 3
+required_flags = Array[StringName]([&"boss_defeated"])
+

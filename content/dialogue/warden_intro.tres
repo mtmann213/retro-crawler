@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="DialogueEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/dialogue_event_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+content_id = &"dialogue_warden_intro"
+trigger_id = &"room_warden_chamber"
+speaker = "WARDEN UNIT"
+text = "Operator identity rejected. Remain still for assessment."
+presentation = 1
+

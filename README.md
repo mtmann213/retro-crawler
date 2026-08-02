@@ -1,6 +1,6 @@
 # Retro Crawler
 
-Retro Crawler is a Godot 4.7.1 vertical-slice prototype. Milestone 4 connects the deterministic combat and reward systems to a five-room graybox dungeon with interactions, an optional detour, and a visible action-driven floor clock.
+Retro Crawler is a Godot 4.7.1 vertical-slice prototype. Milestone 5 completes the first beginning-to-ending run with original narrative events, achievements, a three-phase Warden boss, and distinct victory and emergency-extraction endings.
 
 ## Play the prototype
 
@@ -10,7 +10,7 @@ Retro Crawler is a Godot 4.7.1 vertical-slice prototype. Milestone 4 connects th
 4. Traverse the Broken Junction, optionally search the Maintenance Cache, clear the Processing Hall, and reach the Warden Chamber.
 5. During encounters, choose among **Quick Strike**, **Heavy Swing**, **Brace**, **Hamstring**, and **Field Patch** while watching each action's dungeon-time cost.
 6. Claim deterministic rewards, inspect item rarity, use consumables, equip gear, and return to the room that triggered combat.
-7. Reach the Warden Chamber or use emergency extraction when the floor deadline expires.
+7. In the Warden Chamber, engage the boss and adapt as it shifts through Assessment, Containment, and Purge phases—or use emergency extraction to end the run early.
 
 Keyboard and controller are supported. Use arrow keys, WASD, or the D-pad to move focus; Enter or controller A confirms. The prototype also defines the full input-action list from the development blueprint so later screens do not need direct key checks.
 
@@ -23,10 +23,10 @@ godot --headless --path . --editor --quit
 godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 ```
 
-The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and deadline behavior, optional-detour pressure, emergency extraction, combat return routing, viewport fit, and 50 deterministic combat seeds.
+The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and narrative events, optional-detour pressure, Warden phase exclusivity and action availability, both endings and their saved flags, combat return routing, viewport fit, and 50 deterministic combat seeds.
 
-## Milestone 4 boundaries
+## Milestone 5 boundaries
 
-Included: Milestone 3 combat and rewards; immutable floor and room definitions; mutable floor and room state; a validated five-room graph; deterministic action-based clock; warning thresholds; graybox navigation; zero-time menus; cache interaction and loot; optional detour; two combat handoffs; return-to-room routing; boss-room arrival; floor failure; emergency extraction; GUT tests; and headless coverage.
+Included: all prior combat, rewards, and exploration systems; data-driven dialogue events; queued announcements, room dialogue, and achievement messages; a Warden boss with three exclusive HP-gated phases and readable telegraphs; phase-safe AI replanning; a complete victory path; emergency extraction; ending-state snapshots; GUT tests; and headless coverage.
 
-Deferred: the Warden boss, narrative announcements, shops, crafting, durability, random affixes, set bonuses, disk saves, final art, and animation polish.
+Deferred: shops, crafting, durability, random affixes, set bonuses, full disk-save orchestration, final art, audio, and animation polish.

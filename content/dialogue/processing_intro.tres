@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DialogueEventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/definitions/dialogue_event_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+content_id = &"dialogue_processing_intro"
+trigger_id = &"room_processing_hall"
+speaker = "FACILITY"
+text = "Unauthorized approach detected. Warden authority has been restored."
+
