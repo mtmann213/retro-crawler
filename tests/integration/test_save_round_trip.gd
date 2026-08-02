@@ -29,6 +29,8 @@ func test_save_load_round_trip_produces_equivalent_full_run_state() -> void:
 	assert_true(floor.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_true(floor.triggered_thresholds.get(360, false))
 	assert_eq(floor.run_seed, 424_242)
+	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.class_id, "scavenger")
+	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.name, "Latch")
 
 
 func test_corrupted_primary_save_falls_back_to_last_backup() -> void:
@@ -134,6 +136,20 @@ func test_losing_focus_disarms_pause_input_until_a_later_frame() -> void:
 	assert_false(main.title_screen.new_game_button.disabled)
 
 
+func test_new_game_opens_registration_before_creating_a_dungeon() -> void:
+	var main_scene := load("res://main/main.tscn") as PackedScene
+	var main := main_scene.instantiate() as Main
+	add_child_autofree(main)
+	await get_tree().process_frame
+	main.title_screen.new_game_button.pressed.emit()
+	assert_false(main.title_screen.visible)
+	assert_true(main.character_setup.visible)
+	assert_null(main.dungeon_screen)
+	main.character_setup.back_button.pressed.emit()
+	assert_true(main.title_screen.visible)
+	assert_false(main.character_setup.visible)
+
+
 func test_dungeon_screen_restores_a_complete_checkpoint() -> void:
 	var original := load("res://scenes/dungeon/dungeon_screen.tscn").instantiate() as DungeonScreen
 	add_child_autofree(original)
@@ -215,13 +231,34 @@ func test_pending_narrative_queue_survives_restore_until_acknowledged() -> void:
 	assert_true(restored.dialogue_state.shown_events.get(&"achievement_salvage_instinct", false))
 
 
-func test_title_and_pause_screens_fit_the_internal_viewport() -> void:
-	for path: String in ["res://scenes/title/title_screen.tscn", "res://scenes/menus/pause_menu.tscn"]:
+func test_title_character_setup_and_pause_screens_fit_the_internal_viewport() -> void:
+	for path: String in [
+		"res://scenes/title/title_screen.tscn",
+		"res://scenes/title/character_setup.tscn",
+		"res://scenes/menus/pause_menu.tscn",
+	]:
 		var screen := (load(path) as PackedScene).instantiate() as Control
 		add_child_autofree(screen)
+		screen.visible = true
 		await get_tree().process_frame
 		assert_lte(screen.get_combined_minimum_size().x, 640.0)
 		assert_lte(screen.get_combined_minimum_size().y, 360.0)
+
+
+func test_character_setup_emits_a_sanitized_profile() -> void:
+	var setup := load("res://scenes/title/character_setup.tscn").instantiate() as CharacterSetup
+	add_child_autofree(setup)
+	setup.present()
+	setup.name_edit.text = "  Nova!  "
+	(setup.get_node("Panel/Layout/Body/Controls/ClassButtons/ScavengerButton") as Button).pressed.emit()
+	(setup.get_node("Panel/Layout/Body/Controls/ColorButtons/AmberButton") as Button).pressed.emit()
+	var received: Array[Dictionary] = []
+	setup.character_confirmed.connect(func(profile: Dictionary) -> void: received.append(profile))
+	setup.confirm_button.pressed.emit()
+	assert_eq(received.size(), 1)
+	assert_eq(received[0].name, "Nova")
+	assert_eq(received[0].class_id, "scavenger")
+	assert_eq(received[0].color_id, "amber")
 
 
 func test_pause_panel_keeps_a_visible_margin_inside_the_viewport() -> void:
@@ -252,6 +289,7 @@ func _sample_snapshot() -> SessionSnapshot:
 	snapshot.player_run_state = {"current_hp": 71, "resources": {"stamina": 9}}
 	snapshot.dialogue_snapshot = {"shown_events": ["dialogue_floor_intro"]}
 	snapshot.narrative_flags = {"took_detour": true}
+	snapshot.character_profile = CharacterProfile.new("Latch", &"scavenger", &"amber").to_snapshot()
 	return snapshot
 
 
