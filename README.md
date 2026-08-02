@@ -4,6 +4,8 @@ Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending 
 
 Mox is a visible exploration companion with an authored personality, deterministic contextual reactions, bounded relationship growth, and saved memories. The companion foundation is fully offline; optional model-enhanced incidental conversation is reserved for a later milestone.
 
+The expedition-generation foundation deterministically produces validated 8–12-room plans with a traversable critical route, optional branches, encounter and resource roles, a final objective, and a safe extraction path. Physical placement and rendering of these plans is the next generation milestone.
+
 Visual production follows the original 16-bit-inspired technical and style contract in [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md).
 
 The Service Level world is authored in `content/worlds/service_level_layout.tres`. Its reusable room resources define bounds, visual styles, interaction and encounter sockets, progression barriers, and corridors independently from the movement controller. `WorldRenderer` presents that data as an 8x8 tiled layer with animated room lighting, hostile contacts, encounter warnings, and progression locks, providing the foundation for future imported tilesets and seeded room variants without putting generated geometry into combat or save rules.
