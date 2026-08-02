@@ -11,6 +11,11 @@ func test_initial_room_pauses_clock_and_advertises_move_cost() -> void:
 	assert_string_contains((screen.get_node("%FloorClock") as FloorClock).time_label.text, "12:00")
 	var exits := screen.get_node("%ExitList") as HBoxContainer
 	assert_string_contains((exits.get_child(0) as Button).text, "-15 SEC")
+	assert_eq(
+		(screen.get_node("%CombatHost") as Control).mouse_filter,
+		Control.MOUSE_FILTER_IGNORE,
+		"The empty combat overlay must not intercept exploration clicks.",
+	)
 
 
 func test_opening_inventory_costs_no_time() -> void:
