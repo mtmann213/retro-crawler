@@ -101,6 +101,9 @@ func test_screen_fits_the_internal_viewport() -> void:
 	assert_gte(content_rect.position.x, 10.0)
 	assert_lte(content_rect.end.x, 630.0)
 	assert_true((screen.get_node("%RestartButton") as Button).get_global_rect().end.y <= 360.0)
+	var timeline := screen.get_node("%TimelineLabel") as Label
+	assert_true(timeline.text.begins_with("TURN //"))
+	assert_true(timeline.tooltip_text.begins_with("TIMELINE //"))
 
 
 func test_invalid_enemy_action_halts_in_a_restartable_state() -> void:

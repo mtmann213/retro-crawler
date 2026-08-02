@@ -375,6 +375,16 @@ func test_dungeon_screen_fits_the_internal_viewport() -> void:
 	assert_eq(screen.map_area.current_room_id, &"room_broken_junction")
 
 
+func test_visual_layers_keep_world_sprites_behind_overlays() -> void:
+	var screen := await _spawn_screen()
+	var player_layer := screen.map_area.player_sprite.z_index
+	assert_gt((screen.get_node("%EndPanel") as PanelContainer).z_index, player_layer)
+	assert_gt((screen.get_node("%AnnouncementPanel") as AnnouncementPanel).z_index, player_layer)
+	assert_gt((screen.get_node("%InventoryScreen") as InventoryScreen).z_index, player_layer)
+	assert_gt((screen.get_node("%TutorialGuildScreen") as TutorialGuildScreen).z_index, player_layer)
+	assert_gt((screen.get_node("%TransitionOverlay") as ColorRect).z_index, player_layer)
+
+
 func _spawn_screen() -> DungeonScreen:
 	var screen := DUNGEON_SCREEN.instantiate() as DungeonScreen
 	add_child_autofree(screen)
