@@ -32,6 +32,18 @@ func get_room_state(room_id: StringName) -> RoomState:
 
 
 func to_snapshot() -> Dictionary:
+	var room_snapshots := {}
+	for room_id: StringName in rooms:
+		var room_state := rooms[room_id] as RoomState
+		room_snapshots[String(room_id)] = {
+			"visited": room_state.visited,
+			"encounter_completed": room_state.encounter_completed,
+			"interaction_completed": room_state.interaction_completed,
+		}
+	var thresholds: Array[int] = []
+	for threshold: int in triggered_thresholds:
+		if triggered_thresholds[threshold]:
+			thresholds.append(threshold)
 	return {
 		"floor_id": String(floor_id),
 		"current_room_id": String(current_room_id),
@@ -44,6 +56,8 @@ func to_snapshot() -> Dictionary:
 		"boss_defeated": boss_defeated,
 		"victory_ending": victory_ending,
 		"extraction_ending": extraction_ending,
+		"triggered_thresholds": thresholds,
+		"rooms": room_snapshots,
 	}
 
 
@@ -59,4 +73,15 @@ static func from_snapshot(definition: FloorDefinition, snapshot: Dictionary) -> 
 	state.boss_defeated = bool(snapshot.get("boss_defeated", false))
 	state.victory_ending = bool(snapshot.get("victory_ending", false))
 	state.extraction_ending = bool(snapshot.get("extraction_ending", false))
+	for threshold: int in snapshot.get("triggered_thresholds", []):
+		state.triggered_thresholds[threshold] = true
+	var room_snapshots: Dictionary = snapshot.get("rooms", {})
+	for room_id: String in room_snapshots:
+		var room_state := state.get_room_state(StringName(room_id))
+		if room_state == null:
+			continue
+		var room_snapshot: Dictionary = room_snapshots[room_id]
+		room_state.visited = bool(room_snapshot.get("visited", room_state.visited))
+		room_state.encounter_completed = bool(room_snapshot.get("encounter_completed", false))
+		room_state.interaction_completed = bool(room_snapshot.get("interaction_completed", false))
 	return state

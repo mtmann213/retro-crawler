@@ -1,13 +1,27 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/dungeon/dungeon_screen.tscn" id="1_dungeon"]
+[ext_resource type="Script" path="res://main/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/title/title_screen.tscn" id="2_title"]
+[ext_resource type="PackedScene" path="res://scenes/menus/pause_menu.tscn" id="3_pause"]
 
 [node name="Main" type="Node"]
+script = ExtResource("1_main")
 
 [node name="Services" type="Node" parent="."]
 
 [node name="GameSession" type="Node" parent="."]
 
-[node name="ScreenHost" type="Node" parent="."]
+[node name="ScreenHost" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="DungeonScreen" parent="ScreenHost" instance=ExtResource("1_dungeon")]
+[node name="TitleScreen" parent="." instance=ExtResource("2_title")]
+unique_name_in_owner = true
+
+[node name="PauseMenu" parent="." instance=ExtResource("3_pause")]
+unique_name_in_owner = true

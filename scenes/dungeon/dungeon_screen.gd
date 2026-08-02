@@ -1,6 +1,8 @@
 class_name DungeonScreen
 extends Control
 
+signal session_snapshot_changed(snapshot: SessionSnapshot)
+
 const FLOOR: FloorDefinition = preload("res://content/floors/floor_service_level.tres")
 const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 
@@ -94,6 +96,8 @@ func _render_room() -> void:
 	elif floor_state.floor_failed:
 		end_label.text = "FLOOR FAILURE // SHUTDOWN DEADLINE REACHED"
 		extract_button.visible = true
+	if get_viewport().gui_get_focus_owner() == null:
+		call_deferred("_focus_default_control")
 
 
 func _move_to_room(room_id: StringName) -> void:
@@ -112,6 +116,7 @@ func _move_to_room(room_id: StringName) -> void:
 	var room := FLOOR.get_room(room_id)
 	if not room.encounter_id.is_empty() and not state.encounter_completed and room_id != &"room_warden_chamber":
 		_start_combat(room.encounter_id)
+	_request_save()
 
 
 func _interact(interaction_id: StringName) -> void:
@@ -137,6 +142,7 @@ func _interact(interaction_id: StringName) -> void:
 		&"engage_warden":
 			_start_combat(PrototypeEncounter.WARDEN_ENCOUNTER_ID)
 	_render_room()
+	_request_save()
 
 
 func _open_inventory() -> void:
@@ -207,6 +213,7 @@ func _return_from_combat() -> void:
 		narrative_flags[&"boss_defeated"] = true
 		_trigger_narrative(&"victory_ending")
 	_render_room()
+	_request_save()
 
 
 func _present_clock_events(events: Array[FloorClockEvent]) -> void:
@@ -231,6 +238,7 @@ func _extract() -> void:
 	_trigger_narrative(&"extraction_ending")
 	_append_log("EXTRACTION // run state secured")
 	_render_room()
+	_request_save()
 
 
 func _append_log(message: String) -> void:
@@ -252,3 +260,41 @@ func _trigger_narrative(trigger_id: StringName) -> void:
 	)
 	if not events.is_empty():
 		announcement_panel.present_events(events)
+
+
+func create_session_snapshot() -> SessionSnapshot:
+	var snapshot := SessionSnapshot.new()
+	snapshot.floor_snapshot = floor_state.to_snapshot()
+	snapshot.reward_snapshot = reward_session.to_snapshot()
+	snapshot.player_run_state = player_run_state.duplicate(true)
+	snapshot.dialogue_snapshot = dialogue_state.to_snapshot()
+	for flag_id: StringName in narrative_flags:
+		snapshot.narrative_flags[String(flag_id)] = narrative_flags[flag_id]
+	return snapshot
+
+
+func restore_session(snapshot: SessionSnapshot) -> void:
+	if snapshot == null:
+		return
+	floor_state = FloorState.from_snapshot(FLOOR, snapshot.floor_snapshot)
+	reward_session = RewardSession.from_snapshot(snapshot.reward_snapshot)
+	player_run_state = snapshot.player_run_state.duplicate(true)
+	dialogue_state = DialogueState.from_snapshot(snapshot.dialogue_snapshot)
+	narrative_flags.clear()
+	for flag_id: String in snapshot.narrative_flags:
+		narrative_flags[StringName(flag_id)] = bool(snapshot.narrative_flags[flag_id])
+	_render_room()
+	_append_log("SYSTEM // saved session restored")
+
+
+func _request_save() -> void:
+	session_snapshot_changed.emit(create_session_snapshot())
+
+
+func _focus_default_control() -> void:
+	if floor_state.floor_failed and extract_button.visible:
+		extract_button.grab_focus()
+	elif interaction_button.visible and not interaction_button.disabled:
+		interaction_button.grab_focus()
+	elif exit_list.get_child_count() > 0:
+		(exit_list.get_child(0) as Control).grab_focus()
