@@ -59,6 +59,10 @@ static func validate_dictionary(data: Dictionary) -> PackedStringArray:
 	var remaining = floor.get("remaining_seconds", -1)
 	if not (remaining is int or remaining is float) or int(remaining) < 0 or int(remaining) > 720:
 		errors.append("remaining_seconds is outside the floor range.")
+	if floor.has("run_seed"):
+		var run_seed_value = floor.get("run_seed")
+		if not (run_seed_value is int or run_seed_value is float) or int(run_seed_value) <= 0:
+			errors.append("run_seed must be a positive integer.")
 	if not floor.get("triggered_thresholds", []) is Array:
 		errors.append("triggered_thresholds must be an array.")
 	else:
@@ -134,12 +138,12 @@ static func validate_dictionary(data: Dictionary) -> PackedStringArray:
 		if not data["narrative_flags"][flag_id] is bool:
 			errors.append("Narrative flag %s is malformed." % flag_id)
 	var encounter_id := String(data.get("pending_encounter_id", ""))
-	if not ["", "encounter_two_enemy", "encounter_warden"].has(encounter_id):
+	if not ["", "encounter_two_enemy", "encounter_brute", "encounter_warden"].has(encounter_id):
 		errors.append("Unknown pending encounter.")
 	var room_id := String(floor.get("current_room_id", ""))
 	if encounter_id == "encounter_warden" and room_id != "room_warden_chamber":
 		errors.append("Warden encounter is not in the Warden chamber.")
-	if encounter_id == "encounter_two_enemy" and room_id not in ["room_broken_junction", "room_processing_hall"]:
+	if encounter_id in ["encounter_two_enemy", "encounter_brute"] and room_id not in ["room_broken_junction", "room_processing_hall"]:
 		errors.append("Ordinary encounter is not in an encounter room.")
 	if data.has("world_position"):
 		if not data.world_position is Dictionary:

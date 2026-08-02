@@ -100,6 +100,8 @@ func _start_session(snapshot: SessionSnapshot) -> void:
 	if dungeon_screen != null:
 		dungeon_screen.queue_free()
 	dungeon_screen = DUNGEON_SCREEN.instantiate() as DungeonScreen
+	if snapshot == null:
+		dungeon_screen.new_run_seed = RunVariationRules.create_seed()
 	dungeon_screen.session_snapshot_changed.connect(_on_session_snapshot_changed)
 	screen_host.add_child(dungeon_screen)
 	if snapshot != null:

@@ -28,6 +28,7 @@ func test_save_load_round_trip_produces_equivalent_full_run_state() -> void:
 	var floor := FloorState.from_snapshot(FLOOR, (result["snapshot"] as SessionSnapshot).floor_snapshot)
 	assert_true(floor.get_room_state(&"room_broken_junction").encounter_completed)
 	assert_true(floor.triggered_thresholds.get(360, false))
+	assert_eq(floor.run_seed, 424_242)
 
 
 func test_corrupted_primary_save_falls_back_to_last_backup() -> void:
@@ -236,7 +237,7 @@ func test_pause_panel_keeps_a_visible_margin_inside_the_viewport() -> void:
 
 
 func _sample_snapshot() -> SessionSnapshot:
-	var floor := FloorState.new(FLOOR)
+	var floor := FloorState.new(FLOOR, 424_242)
 	floor.current_room_id = &"room_broken_junction"
 	floor.remaining_seconds = 333
 	floor.clock_started = true

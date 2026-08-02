@@ -20,6 +20,8 @@ var visited_room_ids: Dictionary[StringName, bool] = {}
 var interaction_text := ""
 var interaction_available := false
 var encounter_available := false
+var encounter_id: StringName = &""
+var run_variation: Dictionary = {}
 var movement_enabled := true
 var renderer := WorldRenderer.new()
 var player_sprite := Sprite2D.new()
@@ -111,11 +113,15 @@ func present(
 	interaction_label: String,
 	can_interact: bool,
 	has_encounter: bool,
+	presented_encounter_id: StringName = &"",
+	presented_run_variation: Dictionary = {},
 ) -> void:
 	visited_room_ids = visited.duplicate()
 	interaction_text = interaction_label
 	interaction_available = can_interact
 	encounter_available = has_encounter
+	encounter_id = presented_encounter_id
+	run_variation = presented_run_variation.duplicate(true)
 	_encounter_triggered = false
 	if current_room_id != room_id:
 		sync_to_room(room_id)
@@ -231,4 +237,6 @@ func _refresh_renderer() -> void:
 		interaction_available,
 		can_interact_here(),
 		encounter_available,
+		encounter_id,
+		run_variation,
 	)

@@ -30,9 +30,12 @@ var active_combat: CombatScreen
 var dialogue_state := DialogueState.new()
 var dialogue_events: Array[DialogueEventDefinition] = []
 var narrative_flags: Dictionary[StringName, bool] = {}
+var new_run_seed: int = 0
 
 
 func _ready() -> void:
+	if new_run_seed > 0:
+		floor_state = FloorState.new(FLOOR, new_run_seed)
 	assert(RoomTransitionRules.validate_graph(FLOOR).is_empty())
 	assert(ContentRegistry.validate_all().is_empty())
 	dialogue_events = ContentRegistry.get_dialogue_events()
@@ -49,6 +52,7 @@ func _ready() -> void:
 	map_area.interaction_proximity_changed.connect(_sync_interaction_proximity)
 	map_area.encounter_requested.connect(_world_encounter)
 	_append_log("SYSTEM // Service Level loaded. Clock begins when you leave Intake Shelter.")
+	_append_log("RUN VARIANT // %s" % RunVariationRules.summary(floor_state.run_variation))
 	_render_room()
 
 
@@ -56,14 +60,15 @@ func _render_room() -> void:
 	var room := FLOOR.get_room(floor_state.current_room_id)
 	var room_state := floor_state.get_room_state(room.content_id)
 	room_title.text = room.display_name.to_upper()
-	room_description.text = room.description
+	room_description.text = "%s  %s" % [room.description, RunVariationRules.room_flavor(floor_state.run_variation)]
 	var visited: Dictionary[StringName, bool] = {}
 	for room_id: StringName in floor_state.rooms:
 		visited[room_id] = floor_state.get_room_state(room_id).visited
 	floor_clock.present(floor_state)
 	interaction_button.setup(room, room_state.interaction_completed)
+	var encounter_id := _encounter_for_room(room)
 	var encounter_pending := (
-		not room.encounter_id.is_empty()
+		not encounter_id.is_empty()
 		and not room_state.encounter_completed
 		and room.content_id != &"room_warden_chamber"
 	)
@@ -73,6 +78,8 @@ func _render_room() -> void:
 		room.interaction_label,
 		not room_state.interaction_completed,
 		encounter_pending,
+		encounter_id,
+		floor_state.run_variation,
 	)
 	_sync_interaction_proximity(map_area.can_interact_here(), room.interaction_label)
 	emergency_button.visible = (
@@ -109,7 +116,7 @@ func _move_to_room(room_id: StringName) -> void:
 	_trigger_narrative(room_id)
 	_render_room()
 	var room := FLOOR.get_room(room_id)
-	if not room.encounter_id.is_empty() and room_id != &"room_warden_chamber":
+	if not _encounter_for_room(room).is_empty() and room_id != &"room_warden_chamber":
 		_append_log("HOSTILES DETECTED // approach contact to engage // routes locked")
 	_request_save()
 
@@ -130,7 +137,11 @@ func _interact(interaction_id: StringName) -> void:
 			if not floor_state.floor_failed:
 				room_state.interaction_completed = true
 				var patch := reward_session.get_item(&"item_field_patch")
-				var added := InventoryRules.add_item(reward_session.inventory, patch, 2)
+				var added := InventoryRules.add_item(
+					reward_session.inventory,
+					patch,
+					RunVariationRules.cache_patch_count(floor_state.run_variation),
+				)
 				_append_log("CACHE RECOVERED // Field Patch x%d" % added)
 				narrative_flags[&"took_detour"] = true
 				_trigger_narrative(&"cache_found")
@@ -151,9 +162,10 @@ func _world_encounter(room_id: StringName) -> void:
 		return
 	var room := FLOOR.get_room(room_id)
 	var room_state := floor_state.get_room_state(room_id)
-	if room == null or room.encounter_id.is_empty() or room_state.encounter_completed:
+	var encounter_id := _encounter_for_room(room)
+	if room == null or encounter_id.is_empty() or room_state.encounter_completed:
 		return
-	_start_combat(room.encounter_id)
+	_start_combat(encounter_id)
 	_request_save()
 
 
@@ -195,6 +207,9 @@ func _start_combat(encounter_id: StringName) -> void:
 	active_combat = COMBAT_SCREEN.instantiate() as CombatScreen
 	active_combat.reward_session = reward_session
 	active_combat.encounter_id = encounter_id
+	active_combat.encounter_seed = RunVariationRules.combat_seed(
+		floor_state.run_seed, floor_state.current_room_id,
+	)
 	active_combat.continue_starts_encounter = false
 	active_combat.carried_player_state = player_run_state.duplicate(true)
 	active_combat.dungeon_thresholds = floor_state.triggered_thresholds.duplicate()
@@ -289,6 +304,10 @@ func _visited_count() -> int:
 		if room_state.visited:
 			count += 1
 	return count
+
+
+func _encounter_for_room(room: RoomDefinition) -> StringName:
+	return RunVariationRules.encounter_for_room(floor_state.run_variation, room)
 
 
 func _trigger_narrative(trigger_id: StringName) -> void:
