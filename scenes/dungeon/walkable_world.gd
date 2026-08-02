@@ -243,4 +243,5 @@ func _refresh_renderer() -> void:
 		encounter_available,
 		encounter_id,
 		run_variation,
+		player_position,
 	)

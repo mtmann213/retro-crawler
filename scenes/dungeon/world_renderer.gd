@@ -15,6 +15,7 @@ var interaction_in_range := false
 var encounter_available := false
 var encounter_id: StringName = &""
 var run_variation: Dictionary = {}
+var player_world_position := Vector2.INF
 var hostile_sprites: Array[Sprite2D] = []
 var _animation_time := 0.0
 
@@ -49,6 +50,7 @@ func present(
 	has_encounter: bool,
 	presented_encounter_id: StringName = &"",
 	presented_run_variation: Dictionary = {},
+	presented_player_position: Vector2 = Vector2.INF,
 ) -> void:
 	layout = definition
 	current_room_id = room_id
@@ -59,6 +61,7 @@ func present(
 	encounter_available = has_encounter
 	encounter_id = presented_encounter_id
 	run_variation = presented_run_variation.duplicate(true)
+	player_world_position = presented_player_position
 	_sync_hostile_visibility()
 	queue_redraw()
 
@@ -80,11 +83,13 @@ func _draw() -> void:
 	var current := layout.get_room(current_room_id)
 	if current != null:
 		_draw_room_ambience(current)
+	_draw_player_grounding()
 	if current != null and encounter_available and current.has_encounter_point():
 		_draw_encounter(current)
 		_draw_locked_exits(current)
 	if current != null and interaction_available and current.has_interaction_point():
 		_draw_interaction(current, canvas_size)
+	_draw_atmosphere(canvas_size)
 	draw_rect(Rect2(Vector2.ZERO, canvas_size), Color("31536b"), false, 1.0)
 
 
@@ -93,6 +98,8 @@ func _draw_room(room: WorldRoomDefinition, visited: bool) -> void:
 	var base := Color("102536").lerp(accent, 0.10) if visited else Color("09131c")
 	var alternate := Color("132c3e").lerp(accent, 0.08) if visited else Color("0b1822")
 	_draw_tiled_surface(room.bounds, base, alternate)
+	draw_rect(Rect2(room.bounds.position, Vector2(room.bounds.size.x, 4)), Color("050a0f", 0.78), true)
+	draw_line(room.bounds.position + Vector2(1, room.bounds.size.y - 2), room.bounds.end - Vector2(1, 2), Color("6b8ca1", 0.20), 1.0)
 	draw_rect(room.bounds, Color("7dd3fc") if room.content_id == current_room_id else Color("35566d"), false, 2.0 if room.content_id == current_room_id else 1.0)
 	draw_string(ThemeDB.fallback_font, room.bounds.position + Vector2(6, 13), room.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color("a9c5d8") if visited else Color("536674"))
 	if visited:
@@ -166,12 +173,33 @@ func _draw_room_ambience(room: WorldRoomDefinition) -> void:
 	var inset := room.bounds.grow(-4.0)
 	var accent := _theme_accent()
 	draw_rect(inset, Color(accent, 0.012 + breath * 0.014), true)
+	draw_circle(inset.get_center(), minf(inset.size.x, inset.size.y) * 0.42, Color(accent, 0.018 + breath * 0.012), true)
 	for light_x: float in [inset.position.x + 12.0, inset.end.x - 12.0]:
 		draw_circle(Vector2(light_x, inset.position.y + 7.0), 2.0 + breath, Color(accent, 0.28 + breath * 0.18), true)
 	var hazard_pattern := int(room_variant.get("hazard_pattern", 0))
 	for index: int in hazard_pattern + 1:
 		var marker := inset.position + Vector2(18 + index * 29, inset.size.y - 7)
 		draw_line(marker, marker + Vector2(7, -4), Color(accent, 0.32), 1.0)
+
+
+func _draw_player_grounding() -> void:
+	if not player_world_position.is_finite():
+		return
+	draw_set_transform(player_world_position + Vector2(0, 7), 0.0, Vector2(1.0, 0.38))
+	draw_circle(Vector2.ZERO, 10.0, Color("020406", 0.58), true)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _draw_atmosphere(canvas_size: Vector2) -> void:
+	var accent := _theme_accent()
+	for index: int in 8:
+		var drift := fmod(float(index * 79) + _animation_time * (2.0 + index * 0.17), canvas_size.x - 12.0)
+		var height := 12.0 + fmod(float(index * 31), maxf(canvas_size.y - 24.0, 1.0))
+		draw_circle(Vector2(6.0 + drift, height), 0.7, Color(accent, 0.10 + (index % 3) * 0.025), true)
+	for y: int in range(2, int(canvas_size.y), 4):
+		draw_line(Vector2(1, y), Vector2(canvas_size.x - 1, y), Color("020609", 0.075), 1.0)
+	draw_rect(Rect2(Vector2.ZERO, Vector2(8, canvas_size.y)), Color("020609", 0.34), true)
+	draw_rect(Rect2(Vector2(canvas_size.x - 8, 0), Vector2(8, canvas_size.y)), Color("020609", 0.34), true)
 
 
 func _theme_accent() -> Color:
