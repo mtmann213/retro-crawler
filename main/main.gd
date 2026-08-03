@@ -112,6 +112,7 @@ func _start_session(snapshot: SessionSnapshot, profile_snapshot: Dictionary = {}
 	if dungeon_screen != null:
 		dungeon_screen.queue_free()
 	dungeon_screen = DUNGEON_SCREEN.instantiate() as DungeonScreen
+	dungeon_screen.tutorials_enabled = bool(settings.get("tutorials", true))
 	if snapshot == null:
 		dungeon_screen.new_run_seed = RunVariationRules.create_seed()
 		dungeon_screen.new_character_profile = profile_snapshot.duplicate(true)

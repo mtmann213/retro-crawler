@@ -8,6 +8,8 @@ signal boss_phase_changed(trigger_id: StringName)
 const PLAYER_ID := 1
 const FIRST_ENEMY_ID := 2
 const SECOND_ENEMY_ID := 3
+const CHARACTER_PROFILE_SCRIPT := preload("res://rules/progression/character_profile.gd")
+const CHARACTER_CLASS_RULES_SCRIPT := preload("res://rules/progression/character_class_rules.gd")
 
 @onready var player_name_label: Label = %PlayerName
 @onready var player_hp_label: Label = %PlayerHPLabel
@@ -58,7 +60,7 @@ var selected_target_id: int = FIRST_ENEMY_ID
 var rewards_granted: bool = false
 var completed_encounters: int = 0
 var encounter_seed: int = PrototypeEncounter.DEFAULT_SEED
-var character_profile: Dictionary = CharacterProfile.new().to_snapshot()
+var character_profile: Dictionary = CHARACTER_PROFILE_SCRIPT.new().to_snapshot()
 var _applied_dungeon_thresholds: Dictionary[int, bool] = {}
 var _boss_presenter := BossPresenter.new()
 
@@ -101,9 +103,9 @@ func _start_encounter() -> void:
 	rewards_granted = false
 	_applied_dungeon_thresholds.clear()
 	_boss_presenter = BossPresenter.new()
-	CharacterClassRules.apply_profile(
+	CHARACTER_CLASS_RULES_SCRIPT.apply_profile(
 		simulation.get_combatant(PLAYER_ID),
-		CharacterProfile.from_snapshot(character_profile),
+		CHARACTER_PROFILE_SCRIPT.from_snapshot(character_profile),
 	)
 	EquipmentRules.apply_equipped_items(
 		reward_session.inventory,
@@ -447,11 +449,14 @@ func _update_intents(player: CombatantState) -> void:
 func _update_timeline() -> void:
 	var ordered := simulation.combatants.duplicate()
 	ordered.sort_custom(TimelineResolver.acts_before)
-	var entries: PackedStringArray = []
+	var compact_entries: PackedStringArray = []
+	var full_entries: PackedStringArray = []
 	for combatant: CombatantState in ordered:
 		if not combatant.is_defeated:
-			entries.append("%s %03d" % [combatant.display_name.to_upper(), combatant.next_action_tick])
-	timeline_label.text = "TIMELINE // " + "  >  ".join(entries)
+			compact_entries.append("%s %03d" % [_timeline_name(combatant), combatant.next_action_tick])
+			full_entries.append("%s %03d" % [combatant.display_name.to_upper(), combatant.next_action_tick])
+	timeline_label.text = "TURN // " + " > ".join(compact_entries)
+	timeline_label.tooltip_text = "TIMELINE // " + " > ".join(full_entries)
 
 
 func _choose_living_target() -> void:
@@ -492,6 +497,12 @@ func _emit_dungeon_time(actor: CombatantState, skill_id: StringName) -> void:
 
 func _short_name(combatant: CombatantState) -> String:
 	return combatant.display_name.get_slice(" ", combatant.display_name.get_slice_count(" ") - 1).to_upper()
+
+
+func _timeline_name(combatant: CombatantState) -> String:
+	if combatant.team == CombatantState.Team.PLAYER:
+		return "YOU"
+	return _short_name(combatant)
 
 
 func _contains_event(events: Array[CombatEvent], event_type: CombatEvent.EventType) -> bool:

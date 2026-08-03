@@ -31,6 +31,7 @@ func test_save_load_round_trip_produces_equivalent_full_run_state() -> void:
 	assert_eq(floor.run_seed, 424_242)
 	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.class_id, "scavenger")
 	assert_eq((result["snapshot"] as SessionSnapshot).character_profile.name, "Latch")
+	assert_eq((result["snapshot"] as SessionSnapshot).tutorial_snapshot.completed_lessons, ["combat_intents"])
 
 
 func test_corrupted_primary_save_falls_back_to_last_backup() -> void:
@@ -236,6 +237,7 @@ func test_title_character_setup_and_pause_screens_fit_the_internal_viewport() ->
 		"res://scenes/title/title_screen.tscn",
 		"res://scenes/title/character_setup.tscn",
 		"res://scenes/menus/pause_menu.tscn",
+		"res://scenes/menus/tutorial_guild_screen.tscn",
 	]:
 		var screen := (load(path) as PackedScene).instantiate() as Control
 		add_child_autofree(screen)
@@ -290,6 +292,9 @@ func _sample_snapshot() -> SessionSnapshot:
 	snapshot.dialogue_snapshot = {"shown_events": ["dialogue_floor_intro"]}
 	snapshot.narrative_flags = {"took_detour": true}
 	snapshot.character_profile = CharacterProfile.new("Latch", &"scavenger", &"amber").to_snapshot()
+	var guild_state := TutorialGuildState.new()
+	guild_state.complete_lesson(&"combat_intents")
+	snapshot.tutorial_snapshot = guild_state.to_snapshot()
 	return snapshot
 
 
