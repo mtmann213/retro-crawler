@@ -377,6 +377,56 @@ func test_player_can_defeat_warden_and_reach_victory_ending() -> void:
 	assert_ne(mobile_base.next_plan.seed, first_contract_seed)
 	assert_true(mobile_base.next_plan.validate().is_empty())
 	assert_false((screen.get_node("%ExplorationView") as Control).visible)
+	var deployed_plan := mobile_base.next_plan
+	(mobile_base.get_node("%DeployButton") as Button).pressed.emit()
+	await get_tree().process_frame
+	var expedition := screen.get_node("%GeneratedExpeditionScreen") as GeneratedExpeditionScreen
+	assert_true(expedition.visible)
+	assert_false(mobile_base.visible)
+	assert_eq(expedition.plan.seed, deployed_plan.seed)
+	assert_true(expedition.generated_layout.validate().is_empty())
+	assert_eq(expedition.world.current_room_id, deployed_plan.start_room_id)
+	assert_eq(get_viewport().gui_get_focus_owner(), expedition.world)
+	var next_room_id: StringName = deployed_plan.neighbors(deployed_plan.start_room_id).front()
+	expedition.world.player_position = expedition.generated_layout.get_room(next_room_id).bounds.get_center()
+	expedition.world._check_room_entry()
+	assert_eq(expedition.current_room_id, next_room_id)
+	assert_true(expedition.visited_room_ids.get(next_room_id, false))
+	(expedition.get_node("%ReturnButton") as Button).pressed.emit()
+	assert_false(expedition.visible)
+	assert_true(mobile_base.visible)
+
+
+func test_wayfarer_buttons_accept_mouse_after_expedition_return() -> void:
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(640, 360)
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child_autofree(viewport)
+	var screen := DUNGEON_SCREEN.instantiate() as DungeonScreen
+	viewport.add_child(screen)
+	await get_tree().process_frame
+	screen.exploration_view.visible = false
+	screen.mobile_base_screen.present(8080)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var base := screen.mobile_base_screen
+	var first_seed := base.next_plan.seed
+	await _click_button_in_viewport(viewport, base.survey_button)
+	assert_ne(base.next_plan.seed, first_seed)
+	await _click_button_in_viewport(viewport, base.deploy_button)
+	assert_true(screen.generated_expedition_screen.visible)
+	assert_false(base.visible)
+	await _click_button_in_viewport(viewport, screen.generated_expedition_screen.return_button)
+	assert_false(screen.generated_expedition_screen.visible)
+	assert_true(base.visible)
+	await get_tree().process_frame
+	var returned_seed := base.next_plan.seed
+	await _click_button_in_viewport(viewport, base.survey_button)
+	assert_ne(
+		base.next_plan.seed,
+		returned_seed,
+		"Wayfarer buttons must accept mouse input after returning from a deployment.",
+	)
 
 
 func test_dungeon_screen_fits_the_internal_viewport() -> void:
@@ -406,6 +456,7 @@ func test_visual_layers_keep_world_sprites_behind_overlays() -> void:
 	assert_gt((screen.get_node("%InventoryScreen") as InventoryScreen).z_index, player_layer)
 	assert_gt((screen.get_node("%TutorialGuildScreen") as TutorialGuildScreen).z_index, player_layer)
 	assert_gt((screen.get_node("%MobileBaseScreen") as MobileBaseScreen).z_index, player_layer)
+	assert_gt((screen.get_node("%GeneratedExpeditionScreen") as GeneratedExpeditionScreen).z_index, player_layer)
 	assert_gt((screen.get_node("%TransitionOverlay") as ColorRect).z_index, player_layer)
 
 
@@ -431,3 +482,22 @@ func _spawn_screen() -> DungeonScreen:
 func _approach_encounter(screen: DungeonScreen, room_id: StringName) -> void:
 	screen.map_area.restore_position(screen.map_area.encounter_point_for_room(room_id), room_id)
 	screen.map_area._check_encounter_proximity()
+
+
+func _click_button_in_viewport(viewport: SubViewport, button: Button) -> void:
+	var position := button.get_global_rect().get_center()
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.button_mask = MOUSE_BUTTON_MASK_LEFT
+	event.position = position
+	event.global_position = position
+	event.pressed = true
+	viewport.push_input(event, true)
+	await get_tree().process_frame
+	event = InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = position
+	event.global_position = position
+	event.pressed = false
+	viewport.push_input(event, true)
+	await get_tree().process_frame

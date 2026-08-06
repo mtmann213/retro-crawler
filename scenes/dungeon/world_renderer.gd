@@ -204,9 +204,9 @@ func _draw_atmosphere(canvas_size: Vector2) -> void:
 
 func _theme_accent() -> Color:
 	match StringName(run_variation.get("theme_id", "cold")):
-		&"emergency":
+		&"emergency", &"rust_garden":
 			return Color("fb923c")
-		&"arc":
+		&"arc", &"arc_vault":
 			return Color("c084fc")
 		_:
 			return Color("7dd3fc")

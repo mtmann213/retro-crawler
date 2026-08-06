@@ -9,13 +9,14 @@ signal encounter_requested(room_id: StringName)
 
 const PLAYER_TEXTURE := preload("res://assets/characters/crawler_topdown.png")
 const COMPANION_AVATAR_SCRIPT := preload("res://scenes/dungeon/companion_avatar.gd")
-const LAYOUT: WorldLayoutDefinition = preload("res://content/worlds/service_level_layout.tres")
+const DEFAULT_LAYOUT: WorldLayoutDefinition = preload("res://content/worlds/service_level_layout.tres")
 const MOVE_SPEED := 82.0
 const INTERACTION_RADIUS := 24.0
 const ENCOUNTER_RADIUS := 24.0
 const PLAYER_SCALE := Vector2(0.042, 0.042)
 
-var player_position := LAYOUT.starting_position
+var layout: WorldLayoutDefinition = DEFAULT_LAYOUT
+var player_position := DEFAULT_LAYOUT.starting_position
 var current_room_id: StringName = &"room_intake_shelter"
 var visited_room_ids: Dictionary[StringName, bool] = {}
 var interaction_text := ""
@@ -33,7 +34,7 @@ var _movement_phase := 0.0
 
 
 func _ready() -> void:
-	assert(LAYOUT.validate().is_empty())
+	assert(layout.validate().is_empty())
 	focus_mode = Control.FOCUS_ALL
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	clip_contents = true
@@ -51,6 +52,22 @@ func _ready() -> void:
 	player_sprite.z_index = 5
 	add_child(player_sprite)
 	companion_avatar.snap_to(player_position)
+	_refresh_renderer()
+
+
+func configure_layout(definition: WorldLayoutDefinition, starting_room_id: StringName) -> void:
+	assert(definition != null and definition.validate().is_empty())
+	layout = definition
+	current_room_id = starting_room_id
+	visited_room_ids = {starting_room_id: true}
+	player_position = layout.starting_position
+	_encounter_triggered = false
+	_interaction_in_range = false
+	if is_instance_valid(player_sprite):
+		player_sprite.position = player_position
+	if is_instance_valid(companion_avatar):
+		companion_avatar.snap_to(player_position)
+	_refresh_interaction_proximity()
 	_refresh_renderer()
 
 
@@ -142,7 +159,7 @@ func present(
 func sync_to_room(room_id: StringName, force_warp: bool = true) -> void:
 	current_room_id = room_id
 	_encounter_triggered = false
-	var room := LAYOUT.get_room(room_id)
+	var room := layout.get_room(room_id)
 	if room == null:
 		return
 	if force_warp or not room.bounds.has_point(player_position):
@@ -155,7 +172,7 @@ func sync_to_room(room_id: StringName, force_warp: bool = true) -> void:
 
 func restore_position(position: Vector2, room_id: StringName) -> void:
 	current_room_id = room_id
-	var room := LAYOUT.get_room(room_id)
+	var room := layout.get_room(room_id)
 	if room == null:
 		return
 	player_position = position if _is_walkable(position) else room.bounds.get_center()
@@ -166,31 +183,31 @@ func restore_position(position: Vector2, room_id: StringName) -> void:
 
 
 func can_interact_here() -> bool:
-	var room := LAYOUT.get_room(current_room_id)
+	var room := layout.get_room(current_room_id)
 	if not interaction_available or room == null or not room.has_interaction_point():
 		return false
 	return player_position.distance_to(room.interaction_point) <= INTERACTION_RADIUS
 
 
 func interaction_point_for_room(room_id: StringName) -> Vector2:
-	var room := LAYOUT.get_room(room_id)
+	var room := layout.get_room(room_id)
 	return room.interaction_point if room != null and room.has_interaction_point() else Vector2.INF
 
 
 func encounter_point_for_room(room_id: StringName) -> Vector2:
-	var room := LAYOUT.get_room(room_id)
+	var room := layout.get_room(room_id)
 	return room.encounter_point if room != null and room.has_encounter_point() else Vector2.INF
 
 
 func can_trigger_encounter() -> bool:
-	var room := LAYOUT.get_room(current_room_id)
+	var room := layout.get_room(current_room_id)
 	if not encounter_available or room == null or not room.has_encounter_point():
 		return false
 	return player_position.distance_to(room.encounter_point) <= ENCOUNTER_RADIUS
 
 
 func is_progression_locked(room_id: StringName) -> bool:
-	var room := LAYOUT.get_room(room_id)
+	var room := layout.get_room(room_id)
 	return encounter_available and current_room_id == room_id and room != null and not room.locked_exit_rects.is_empty()
 
 
@@ -210,7 +227,7 @@ func _check_encounter_proximity() -> void:
 
 
 func _check_room_entry() -> void:
-	for room: WorldRoomDefinition in LAYOUT.rooms:
+	for room: WorldRoomDefinition in layout.rooms:
 		if room.bounds.grow(-4.0).has_point(player_position) and room.content_id != current_room_id:
 			current_room_id = room.content_id
 			room_entered.emit(room.content_id)
@@ -219,18 +236,18 @@ func _check_room_entry() -> void:
 
 func _is_walkable(position: Vector2) -> bool:
 	var inside_floor := false
-	for room: WorldRoomDefinition in LAYOUT.rooms:
+	for room: WorldRoomDefinition in layout.rooms:
 		if room.bounds.grow(-3.0).has_point(position):
 			inside_floor = true
 			break
 	if not inside_floor:
-		for corridor: Rect2 in LAYOUT.corridors:
+		for corridor: Rect2 in layout.corridors:
 			if corridor.has_point(position):
 				inside_floor = true
 				break
 	if not inside_floor:
 		return false
-	var current := LAYOUT.get_room(current_room_id)
+	var current := layout.get_room(current_room_id)
 	if is_progression_locked(current_room_id):
 		for barrier: Rect2 in current.locked_exit_rects:
 			if barrier.has_point(position):
@@ -242,7 +259,7 @@ func _refresh_renderer() -> void:
 	if not is_instance_valid(renderer):
 		return
 	renderer.present(
-		LAYOUT,
+		layout,
 		current_room_id,
 		visited_room_ids,
 		interaction_text,

@@ -45,3 +45,41 @@ func test_validator_rejects_a_broken_required_route() -> void:
 	var second_id := plan.critical_route[1]
 	(plan.rooms[plan.start_room_id].neighbors as Array[StringName]).erase(second_id)
 	assert_false(plan.validate().is_empty())
+
+
+func test_generated_plans_build_valid_bounded_walkable_worlds() -> void:
+	var canvas := Rect2(Vector2.ZERO, Vector2(620.0, 210.0))
+	for seed: int in range(1, 251):
+		var plan := ExpeditionGenerator.generate(seed)
+		var layout := ExpeditionWorldBuilder.build(plan)
+		assert_true(layout.validate().is_empty(), "Seed %d must build a valid world layout." % seed)
+		assert_eq(layout.rooms.size(), plan.rooms.size())
+		assert_not_null(layout.get_room(plan.start_room_id))
+		assert_true(layout.get_room(plan.start_room_id).bounds.has_point(layout.starting_position))
+		for room: WorldRoomDefinition in layout.rooms:
+			assert_true(canvas.encloses(room.bounds), "Seed %d placed %s outside the walkable canvas." % [seed, room.content_id])
+		for first_index: int in layout.rooms.size():
+			for second_index: int in range(first_index + 1, layout.rooms.size()):
+				assert_false(
+					layout.rooms[first_index].bounds.intersects(layout.rooms[second_index].bounds),
+					"Seed %d generated overlapping rooms." % seed,
+				)
+
+
+func test_same_plan_builds_an_identical_world_layout() -> void:
+	var plan := ExpeditionGenerator.generate(202020)
+	var first := ExpeditionWorldBuilder.build(plan)
+	var second := ExpeditionWorldBuilder.build(plan)
+	assert_eq(_layout_signature(first), _layout_signature(second))
+
+
+func _layout_signature(layout: WorldLayoutDefinition) -> Dictionary:
+	var room_bounds: Dictionary[String, Rect2] = {}
+	for room: WorldRoomDefinition in layout.rooms:
+		room_bounds[String(room.content_id)] = room.bounds
+	return {
+		"id": String(layout.content_id),
+		"start": layout.starting_position,
+		"rooms": room_bounds,
+		"corridors": layout.corridors,
+	}

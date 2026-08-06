@@ -23,7 +23,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
+mouse_filter = 2
 script = ExtResource("1_screen")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -33,6 +33,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.012, 0.02, 0.031, 1)
 
 [node name="Panel" type="PanelContainer" parent="."]
@@ -102,15 +103,24 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_constants/separation = 6
 
+[node name="DeployButton" type="Button" parent="Panel/Layout/Actions"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
+theme_override_font_sizes/font_size = 9
+text = "DEPLOY"
+
 [node name="SurveyButton" type="Button" parent="Panel/Layout/Actions"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "SURVEY ANOTHER CONTRACT"
+theme_override_font_sizes/font_size = 9
+text = "SURVEY AGAIN"
 
 [node name="ReturnButton" type="Button" parent="Panel/Layout/Actions"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.525, 0.937, 0.675, 1)
-text = "ARCHIVE RUN AND RETURN TO TITLE"
+theme_override_font_sizes/font_size = 9
+text = "RETURN TO TITLE"

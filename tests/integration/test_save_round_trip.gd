@@ -241,11 +241,14 @@ func test_title_character_setup_and_pause_screens_fit_the_internal_viewport() ->
 		"res://scenes/menus/pause_menu.tscn",
 		"res://scenes/menus/tutorial_guild_screen.tscn",
 		"res://scenes/mobile_base/mobile_base_screen.tscn",
+		"res://scenes/expedition/generated_expedition_screen.tscn",
 	]:
 		var screen := (load(path) as PackedScene).instantiate() as Control
 		add_child_autofree(screen)
 		if screen is MobileBaseScreen:
 			(screen as MobileBaseScreen).present(12345)
+		elif screen is GeneratedExpeditionScreen:
+			(screen as GeneratedExpeditionScreen).present(ExpeditionGenerator.generate(54321), Color("7dd3fc"))
 		else:
 			screen.visible = true
 		await get_tree().process_frame
@@ -255,10 +258,15 @@ func test_title_character_setup_and_pause_screens_fit_the_internal_viewport() ->
 			var base_panel := screen.get_node("Panel") as PanelContainer
 			assert_gte(base_panel.position.y, 8.0)
 			assert_lte(base_panel.position.y + base_panel.size.y, 352.0)
-			for button_name: String in ["%SurveyButton", "%ReturnButton"]:
+			for button_name: String in ["%DeployButton", "%SurveyButton", "%ReturnButton"]:
 				var action := screen.get_node(button_name) as Button
 				assert_gte(action.get_global_rect().position.y, 0.0)
 				assert_lte(action.get_global_rect().end.y, 360.0)
+		elif screen is GeneratedExpeditionScreen:
+			var expedition_content := (screen.get_node("Margin/Layout") as VBoxContainer).get_global_rect()
+			assert_gte(expedition_content.position.y, 6.0)
+			assert_lte(expedition_content.end.y, 354.0)
+			assert_lte((screen.get_node("%ReturnButton") as Button).get_global_rect().end.y, 360.0)
 
 
 func test_character_setup_emits_a_sanitized_profile() -> void:
