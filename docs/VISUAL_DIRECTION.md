@@ -42,12 +42,29 @@ World sprites must never draw over modal or end-state surfaces.
 
 ## Environment rules
 
+- Exploration environments occupy the primary viewport. Do not present the playable world as a complete room graph compressed into one screen.
+- A logical expedition sector is at least one full exploration screen and may span several camera screens.
+- Use a following camera inside a sector. The contract graph belongs in a separate map/minimap layer, not as the physical scale of play.
+- Keep the exploration HUD to a slim status/prompt layer so scenery, actors, and landmarks dominate the screen.
 - Every room needs a readable silhouette and at least one identifying landmark.
+- Every sector needs authored composition: boundaries, paths, elevation or wall masses, large props, small dressing, interaction sockets, actor sockets, and deliberate negative space.
 - Use large value groupings before small texture details.
 - Animated ambience should be subtle and must not obscure routes or interaction markers.
 - Current rooms receive the strongest outline and atmospheric accent.
 - Optional routes use visual curiosity rather than stronger brightness than the critical route.
 - Environmental storytelling should communicate purpose, damage, occupation, or change.
+
+### Generated environment composition
+
+Generation operates at multiple levels:
+
+1. The seeded expedition graph selects sector roles and connectivity.
+2. Each role selects an authored, theme-compatible full-screen or multi-screen sector template.
+3. Portal sockets connect templates without changing the validated graph.
+4. A deterministic dressing pass selects landmarks, props, decals, hazards, discoveries, resources, and ambient effects from authored sockets.
+5. Event-driven transformations alter controlled template layers on revisits.
+
+Random noise is not environmental design. Every template must remain readable with dressing disabled, and every generated variant must preserve navigation, collision, interaction clearance, visual hierarchy, and a recognizable landmark.
 
 ## Character and animation rules
 

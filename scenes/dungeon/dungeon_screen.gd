@@ -21,6 +21,7 @@ const COMBAT_SCREEN := preload("res://scenes/combat/combat_screen.tscn")
 @onready var inventory_screen: InventoryScreen = %InventoryScreen
 @onready var tutorial_guild_screen: TutorialGuildScreen = %TutorialGuildScreen
 @onready var mobile_base_screen: MobileBaseScreen = %MobileBaseScreen
+@onready var generated_expedition_screen: GeneratedExpeditionScreen = %GeneratedExpeditionScreen
 @onready var end_panel: PanelContainer = %EndPanel
 @onready var end_label: Label = %EndLabel
 @onready var extract_button: Button = %ExtractButton
@@ -60,6 +61,8 @@ func _ready() -> void:
 	extract_button.pressed.connect(_resolve_end_action)
 	emergency_button.pressed.connect(_extract)
 	mobile_base_screen.return_to_title_requested.connect(return_to_title_requested.emit)
+	mobile_base_screen.deploy_requested.connect(_deploy_generated_expedition)
+	generated_expedition_screen.return_to_base_requested.connect(_return_to_mobile_base)
 	announcement_panel.event_acknowledged.connect(_acknowledge_dialogue)
 	map_area.room_entered.connect(_move_to_room)
 	map_area.interaction_requested.connect(_world_interact)
@@ -355,6 +358,17 @@ func _resolve_end_action() -> void:
 	_extract()
 
 
+func _deploy_generated_expedition(plan: ExpeditionPlan) -> void:
+	mobile_base_screen.deactivate()
+	generated_expedition_screen.present(plan, CharacterClassRules.color_for(character_profile.color_id))
+	_append_log("DEPLOYMENT // entered generated expedition // seed %d" % plan.seed)
+
+
+func _return_to_mobile_base() -> void:
+	mobile_base_screen.resume()
+	_append_log("TRANSFER // returned to the Wayfarer navigation deck")
+
+
 func _append_log(message: String) -> void:
 	event_log.append_text(message + "\n")
 	event_log.scroll_to_line(event_log.get_line_count())
@@ -449,7 +463,7 @@ func _acknowledge_dialogue(event_id: StringName) -> void:
 
 
 func _focus_default_control() -> void:
-	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible or tutorial_guild_screen.visible or mobile_base_screen.visible:
+	if not exploration_view.visible or announcement_panel.visible or inventory_screen.visible or tutorial_guild_screen.visible or mobile_base_screen.visible or generated_expedition_screen.visible:
 		return
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if (

@@ -2,10 +2,12 @@ class_name MobileBaseScreen
 extends Control
 
 signal return_to_title_requested
+signal deploy_requested(plan: ExpeditionPlan)
 
 @onready var contract_label: Label = %ContractLabel
 @onready var route_label: Label = %RouteLabel
 @onready var map_preview: ExpeditionMapPreview = %ExpeditionMapPreview
+@onready var deploy_button: Button = %DeployButton
 @onready var survey_button: Button = %SurveyButton
 @onready var return_button: Button = %ReturnButton
 
@@ -15,6 +17,7 @@ var next_plan: ExpeditionPlan
 
 
 func _ready() -> void:
+	deploy_button.pressed.connect(_deploy)
 	survey_button.pressed.connect(_survey_another)
 	return_button.pressed.connect(return_to_title_requested.emit)
 	visible = false
@@ -23,9 +26,22 @@ func _ready() -> void:
 func present(run_seed: int) -> void:
 	completed_seed = maxi(run_seed, 1)
 	survey_index = 0
-	visible = true
 	_generate_contract()
-	return_button.grab_focus()
+	_activate()
+
+
+func resume() -> void:
+	_activate()
+
+
+func deactivate() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visible = false
+
+
+func _deploy() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	deploy_requested.emit(next_plan)
 
 
 func _survey_another() -> void:
@@ -46,3 +62,10 @@ func _generate_contract() -> void:
 		next_plan.optional_room_count(), next_plan.encounter_room_count(),
 	]
 	map_preview.present(next_plan)
+
+
+func _activate() -> void:
+	visible = true
+	move_to_front()
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	deploy_button.call_deferred("grab_focus")

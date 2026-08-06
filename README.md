@@ -4,11 +4,13 @@ Retro Crawler is a Godot 4.7.1 vertical slice. The complete beginning-to-ending 
 
 Mox is a visible exploration companion with an authored personality, deterministic contextual reactions, bounded relationship growth, and saved memories. The companion foundation is fully offline; optional model-enhanced incidental conversation is reserved for a later milestone.
 
-The expedition-generation foundation deterministically produces validated 8–12-room plans with a traversable critical route, optional branches, encounter and resource roles, a final objective, and a safe extraction path. Physical placement and rendering of these plans is the next generation milestone.
+The expedition-generation foundation deterministically produces validated 8–12-room plans with a traversable critical route, optional branches, encounter and resource roles, a final objective, and a safe extraction path. Those plans now convert into bounded, non-overlapping physical layouts for the first walkable generated deployment.
 
 Defeating the Warden now returns the crawler and Mox to the Wayfarer mobile base. Its navigation board renders the next seeded expedition contract and can survey alternate contracts instead of leaving the completed run on an actionless ending panel.
 
-Visual production follows the original 16-bit-inspired technical and style contract in [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md).
+The selected contract can now be deployed as a first walkable generated expedition: the plan is deterministically converted into connected rooms and corridors, the crawler and Mox can traverse every sector, and the survey tracks the discovered route and objective. Generated encounters, room interactions, completion rewards, and expedition persistence remain follow-up slices.
+
+Visual production follows the original 16-bit-inspired technical and style contract in [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md). The consolidated product, architecture, milestone, decision, and contributor plan is in [docs/PROJECT_HANDBOOK.md](docs/PROJECT_HANDBOOK.md), with supporting planning rationale in [docs/RETRO_CRAWLER_ROADMAP_REVIEW.md](docs/RETRO_CRAWLER_ROADMAP_REVIEW.md).
 
 The Service Level world is authored in `content/worlds/service_level_layout.tres`. Its reusable room resources define bounds, visual styles, interaction and encounter sockets, progression barriers, and corridors independently from the movement controller. `WorldRenderer` presents that data as an 8x8 tiled layer with animated room lighting, hostile contacts, encounter warnings, and progression locks, providing the foundation for future imported tilesets and seeded room variants without putting generated geometry into combat or save rules.
 
@@ -24,6 +26,7 @@ Every New Game now creates and saves a run seed. That seed deterministically sel
 6. During encounters, choose among **Quick Strike**, **Heavy Swing**, **Brace**, **Hamstring**, and **Field Patch** while watching each action's dungeon-time cost.
 7. Claim deterministic rewards, inspect item rarity, use consumables, equip gear, and return to the room that triggered combat.
 8. In the Warden Chamber, engage the boss and adapt as it shifts through Assessment, Containment, and Purge phases—or use emergency extraction to end the run early.
+9. After defeating the Warden, return to the Wayfarer, survey a contract, choose **Deploy**, walk its generated sectors, reach the objective, and return to base.
 
 Keyboard and controller are supported. In the Service Level, use WASD, arrow keys, or the D-pad to walk. Move into the highlighted radius around a point of interest, then press E, Enter, or controller A to interact; I or controller X opens inventory. Menus use the same directional controls, with Enter or controller A to confirm.
 
@@ -40,7 +43,7 @@ godot --headless --path . --editor --quit
 godot --headless --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 ```
 
-The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and narrative events, optional-detour pressure, Warden phase exclusivity and action availability, both endings, full save/load round trips, corrupt-primary backup recovery, save-version rejection, persistent settings, focus-loss safety, controller bindings, viewport fit, and deterministic combat seeds.
+The suite covers combat rules and UI, stack limits, equipment, loot, progression, the five-room graph, mandatory-room reachability, advertised time costs, once-only clock thresholds and narrative events, optional-detour pressure, Warden phase exclusivity and action availability, both endings, full save/load round trips, corrupt-primary backup recovery, save-version rejection, persistent settings, focus-loss safety, controller bindings, viewport fit, deterministic combat seeds, generated expedition-plan validation, and deterministic bounded physical-layout construction.
 
 Run the larger release balance sample with:
 
@@ -61,6 +64,6 @@ Builds are written under `builds/`. Outside-player release gates and the observa
 
 ## Release-candidate boundaries
 
-Included: all prior combat, rewards, exploration, boss, and narrative systems; a walkable five-room Service Level with constrained corridors, physical room-entry triggers, visible hostile contacts, proximity-triggered encounters, clear-to-unlock progression barriers, proximity-based points of interest, contextual prompts, distinct room machinery and hazards, an original crawler sprite, and saved world position; transitions and combat feedback; adaptive procedural music and sound cues; title/new/continue flows; full session snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; export presets; GUT tests; and headless coverage.
+Included: all prior combat, rewards, exploration, boss, and narrative systems; a walkable five-room Service Level with constrained corridors, physical room-entry triggers, visible hostile contacts, proximity-triggered encounters, clear-to-unlock progression barriers, proximity-based points of interest, contextual prompts, distinct room machinery and hazards, an original crawler sprite, and saved world position; the Wayfarer contract board; deterministic generated plans and a walkable generated-deployment traversal slice; transitions and combat feedback; adaptive procedural music and sound cues; title/new/continue flows; full authored-run snapshots; automatic checkpoints; manual and quick saves; valid-backup rotation and recovery; safe version rejection; pause and focus-loss behavior; persistent Master/Music/Effects/tutorial settings; explicit keyboard/controller menu bindings; export presets; GUT tests; and headless coverage.
 
-Deferred beyond this vertical slice: shops, crafting, durability, random affixes, set bonuses, additional floors, and a free-walking overworld. Final release still requires recorded outside playtests and locally installed export templates.
+Deferred beyond this slice: generated encounters/interactions/objective resolution/rewards, generated-expedition persistence, event-driven revisits, a complete Wayfarer economy, story generation, optional AI presentation, shops, crafting, durability, random affixes, and set bonuses. Final release still requires recorded outside playtests and locally installed export templates.
